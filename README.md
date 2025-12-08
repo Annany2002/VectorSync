@@ -2,8 +2,6 @@
 
 VectorSync is a high-performance, self-hostable vector indexing engine built for real-time ingestion and low-latency similarity search. It provides clean APIs for creating collections, inserting/updating documents with embeddings, and performing vector/hybrid search with metadata filters.
 
-The goal is to deliver a production-ready MVP that can later evolve into a distributed, fault-tolerant, and highly scalable vector database.
-
 ---
 
 ## MVP Scope
