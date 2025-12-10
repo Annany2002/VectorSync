@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/Annany2002/vector-sync/internal/db"
 )
 
 func main(){
@@ -13,5 +15,13 @@ func main(){
 			w.Write([]byte("Hello from VectorSync!"))
 		}),
 	}
+
+	// Connect to database
+	db, err := db.Connect()
+	if err != nil {
+		log.Fatal("Error connecting to database:", err)
+	}
+	defer db.Close()
+
 	log.Fatal(server.ListenAndServe())
 }
