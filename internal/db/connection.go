@@ -2,12 +2,16 @@ package db
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"time"
 
+	"github.com/Annany2002/vector-sync/internal/logger"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+)
+
+var (
+	log = logger.NewLogger()
 )
 
 func Connect() (*sql.DB, error) {
@@ -29,6 +33,6 @@ func Connect() (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Println("Database connected successfully")
+	log.Info("Database connected successfully!!!")
 	return db, nil
 }
