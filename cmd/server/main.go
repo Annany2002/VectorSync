@@ -21,11 +21,11 @@ func main(){
 	}
 
 	// Connect to database
-	db, err := db.Connect()
+	dbConn, err := db.Connect()
 	if err != nil {
 		log.Errorf("Error connecting to database: %v", err)
 	}
-	defer db.Close()
+	defer dbConn.Close()
 
 	log.Infof("Server started on :6309")
 	log.Errorf("Server failed to start: %v", server.ListenAndServe())
