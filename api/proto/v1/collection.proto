@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package collections;
+
+import "google/protobuf/any.proto";
+import "api/proto/v1/common.proto";
+
+// Collections represents a collection of documents
+message Collection {
+    common.Common common = 1;
+    string name = 2;
+    int32 vector_dimension = 3;
+    map<string, google.protobuf.Any> metadata_schema = 4;
+}

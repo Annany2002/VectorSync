@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package document;
+
+import "google/protobuf/struct.proto";
+import "api/proto/v1/common.proto";
+
+// Document represents a document in a collection
+message Document {
+    common.Common common = 1;
+    string collection_id = 2;
+    string content = 3;
+    repeated float vector = 4;
+    map<string, google.protobuf.Struct> metadata = 5;
+}
