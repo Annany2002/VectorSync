@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package document;
 
+option go_package = "github.com/Annany2002/vector-sync/internal/pb";
+
 import "google/protobuf/struct.proto";
 import "api/proto/v1/common.proto";
 
