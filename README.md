@@ -254,18 +254,6 @@ See [ROADMAP.md](./ROADMAP.md) for detailed feature tracking and future plans.
 
 ---
 
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
-
----
-
-## License
-
-MIT License - see [LICENSE](./LICENSE) for details.
-
----
-
 ## Acknowledgments
 
 Built with:
