@@ -10,7 +10,69 @@ import "api/proto/v1/common.proto";
 // Collections represents a collection of documents
 message Collection {
     common.Common common = 1;
+
+    // name of the collection (must be unique)
     string name = 2;
+    // dimension of the vector space
     int32 vector_dimension = 3;
+    // schema for metadata
     map<string, google.protobuf.Any> metadata_schema = 4;
+}
+
+
+// CreateCollectionRequest represents a request to create a collection
+message CreateCollectionRequest {
+    // name of the collection (must be unique)
+    string name = 1;
+    // dimension of the vector space
+    int32 vector_dimension = 2;
+    // schema for metadata
+    map<string, google.protobuf.Any> metadata_schema = 3;
+}
+
+// CreateCollectionResponse represents a response to create a collection
+message CreateCollectionResponse {
+    common.Common common = 1;
+}
+
+// RetrieveCollectionRequest represents a request to retrieve a collection
+message RetrieveCollectionRequest {
+    // id of the collection to retrieve
+    string id = 1;
+}
+
+// RetrieveCollectionResponse represents a response to retrieve a collection
+message RetrieveCollectionResponse {
+    // retrieved collection
+    Collection collection = 1;
+}
+
+// ListCollectionsRequest represents a request to list collections
+message ListCollectionsRequest {
+    int32 limit = 1;
+    int32 offset = 2;
+}
+
+// ListCollectionsResponse represents a response to list collections
+message ListCollectionsResponse {
+    repeated Collection collections = 1;
+}
+
+// DeleteCollectionRequest represents a request to delete a collection
+message DeleteCollectionRequest {
+    // id of the collection to delete
+    string id = 1;
+}
+
+// DeleteCollectionResponse represents a response to delete a collection
+message DeleteCollectionResponse {
+    common.Common common = 1;
+}
+
+// CollectionService provides collection management operations
+service CollectionService {
+    rpc CreateCollection (CreateCollectionRequest) returns (CreateCollectionResponse);
+    rpc RetrieveCollection (RetrieveCollectionRequest) returns (RetrieveCollectionResponse);
+    rpc ListCollections (ListCollectionsRequest) returns (ListCollectionsResponse);
+    rpc DeleteCollection (DeleteCollectionRequest) returns (DeleteCollectionResponse);
 }

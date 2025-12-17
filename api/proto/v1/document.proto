@@ -10,8 +10,79 @@ import "api/proto/v1/common.proto";
 // Document represents a document in a collection
 message Document {
     common.Common common = 1;
+
+    // id of the collection the document belongs to
     string collection_id = 2;
+    // content of the document
     string content = 3;
+    // vector representation of the document
     repeated float vector = 4;
+    // metadata associated with the document
     map<string, google.protobuf.Struct> metadata = 5;
+}
+
+// DocumentService provides document management operations
+service DocumentService {
+    rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse);
+    rpc RetrieveDocument (RetrieveDocumentRequest) returns (RetrieveDocumentResponse);
+    rpc ListDocuments (ListDocumentsRequest) returns (ListDocumentsResponse);
+    rpc DeleteDocument (DeleteDocumentRequest) returns (DeleteDocumentResponse);
+}
+
+// CreateDocumentRequest represents a request to create a document
+message CreateDocumentRequest {
+    // id of the collection the document belongs to
+    string collection_id = 1;
+    // content of the document
+    string content = 2;
+    // vector representation of the document
+    repeated float vector = 3;
+    // metadata associated with the document
+    map<string, google.protobuf.Struct> metadata = 4;
+}
+
+// CreateDocumentResponse represents a response to create a document
+message CreateDocumentResponse {
+    // created document
+    Document document = 1;
+}
+
+// RetrieveDocumentRequest represents a request to retrieve a document
+message RetrieveDocumentRequest {
+    // id of the document to retrieve
+    string id = 1;
+}
+
+// RetrieveDocumentResponse represents a response to retrieve a document
+message RetrieveDocumentResponse {
+    // retrieved document
+    Document document = 1;
+}
+
+// ListDocumentsRequest represents a request to list documents
+message ListDocumentsRequest {
+    // id of the collection to list documents from
+    string collection_id = 1;
+    // number of documents to return
+    int32 limit = 2;
+    // offset for pagination
+    int32 offset = 3;
+}
+
+// ListDocumentsResponse represents a response to list documents
+message ListDocumentsResponse {
+    // list of documents
+    repeated Document documents = 1;
+}
+
+// DeleteDocumentRequest represents a request to delete a document
+message DeleteDocumentRequest {
+    // id of the document to delete
+    string id = 1;
+}
+
+// DeleteDocumentResponse represents a response to delete a document
+message DeleteDocumentResponse {
+    // deleted document
+    Document document = 1;
 }
