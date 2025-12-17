@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package common;
 
-option go_package = "github.com/Annany2002/vector-sync/internal/pb";
+option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
 
 import "google/protobuf/timestamp.proto";
 
