@@ -5,6 +5,8 @@ package document;
 option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
 import "api/proto/v1/common.proto";
 
 // Document represents a document in a collection
@@ -19,14 +21,6 @@ message Document {
     repeated float vector = 4;
     // metadata associated with the document
     map<string, google.protobuf.Struct> metadata = 5;
-}
-
-// DocumentService provides document management operations
-service DocumentService {
-    rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse);
-    rpc RetrieveDocument (RetrieveDocumentRequest) returns (RetrieveDocumentResponse);
-    rpc ListDocuments (ListDocumentsRequest) returns (ListDocumentsResponse);
-    rpc DeleteDocument (DeleteDocumentRequest) returns (DeleteDocumentResponse);
 }
 
 // CreateDocumentRequest represents a request to create a document
@@ -47,14 +41,14 @@ message CreateDocumentResponse {
     Document document = 1;
 }
 
-// RetrieveDocumentRequest represents a request to retrieve a document
-message RetrieveDocumentRequest {
-    // id of the document to retrieve
+// ListDocumentRequest represents a request to list a single document
+message ListDocumentRequest {
+    // id of the document to list
     string id = 1;
 }
 
-// RetrieveDocumentResponse represents a response to retrieve a document
-message RetrieveDocumentResponse {
+// ListDocumentResponse represents a response to list a single document
+message ListDocumentResponse {
     // retrieved document
     Document document = 1;
 }
@@ -83,6 +77,16 @@ message DeleteDocumentRequest {
 
 // DeleteDocumentResponse represents a response to delete a document
 message DeleteDocumentResponse {
-    // deleted document
-    Document document = 1;
+    // id of the deleted document
+    string id = 1;
+    // timestamp of the deletion
+    google.protobuf.Timestamp deleted_at = 2;
+}
+
+// DocumentService provides document management operations
+service DocumentService {
+    rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse);
+    rpc ListDocument (ListDocumentRequest) returns (ListDocumentResponse);
+    rpc ListDocuments (ListDocumentsRequest) returns (ListDocumentsResponse);
+    rpc DeleteDocument (DeleteDocumentRequest) returns (DeleteDocumentResponse);
 }

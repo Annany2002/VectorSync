@@ -4,7 +4,9 @@ package collections;
 
 option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
 
-import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
 import "api/proto/v1/common.proto";
 
 // Collections represents a collection of documents
@@ -16,7 +18,7 @@ message Collection {
     // dimension of the vector space
     int32 vector_dimension = 3;
     // schema for metadata
-    map<string, google.protobuf.Any> metadata_schema = 4;
+    map<string, google.protobuf.Struct> metadata_schema = 4;
 }
 
 
@@ -27,34 +29,37 @@ message CreateCollectionRequest {
     // dimension of the vector space
     int32 vector_dimension = 2;
     // schema for metadata
-    map<string, google.protobuf.Any> metadata_schema = 3;
+    map<string, google.protobuf.Struct> metadata_schema = 3;
 }
 
 // CreateCollectionResponse represents a response to create a collection
 message CreateCollectionResponse {
-    common.Common common = 1;
+    // created collection
+    Collection collection = 1;
 }
 
-// RetrieveCollectionRequest represents a request to retrieve a collection
-message RetrieveCollectionRequest {
+// ListCollectionRequest represents a request to retrieve a collection
+message ListCollectionRequest {
     // id of the collection to retrieve
     string id = 1;
 }
 
-// RetrieveCollectionResponse represents a response to retrieve a collection
-message RetrieveCollectionResponse {
+// ListCollectionResponse represents a response to retrieve a collection
+message ListCollectionResponse {
     // retrieved collection
     Collection collection = 1;
 }
 
 // ListCollectionsRequest represents a request to list collections
 message ListCollectionsRequest {
+    // limit and offset for pagination
     int32 limit = 1;
     int32 offset = 2;
 }
 
 // ListCollectionsResponse represents a response to list collections
 message ListCollectionsResponse {
+    // list of collections
     repeated Collection collections = 1;
 }
 
@@ -66,13 +71,16 @@ message DeleteCollectionRequest {
 
 // DeleteCollectionResponse represents a response to delete a collection
 message DeleteCollectionResponse {
-    common.Common common = 1;
+    // id of the deleted collection
+    string id = 1;
+    // timestamp of the deletion
+    google.protobuf.Timestamp deleted_at = 2;
 }
 
 // CollectionService provides collection management operations
 service CollectionService {
     rpc CreateCollection (CreateCollectionRequest) returns (CreateCollectionResponse);
-    rpc RetrieveCollection (RetrieveCollectionRequest) returns (RetrieveCollectionResponse);
+    rpc ListCollection (ListCollectionRequest) returns (ListCollectionResponse);
     rpc ListCollections (ListCollectionsRequest) returns (ListCollectionsResponse);
     rpc DeleteCollection (DeleteCollectionRequest) returns (DeleteCollectionResponse);
 }
