@@ -9,6 +9,7 @@ import (
 	"github.com/Annany2002/vector-sync/internal/logger"
 	"github.com/Annany2002/vector-sync/internal/services"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -39,6 +40,9 @@ func main() {
 
 	// Register our collection service with the gRPC server
 	pb.RegisterCollectionServiceServer(grpcServer, collectionHandler)
+
+	// Enable gRPC reflection for grpcurl
+	reflection.Register(grpcServer)
 
 	// Start listening on port 6309
 	listener, err := net.Listen("tcp", ":6309")
