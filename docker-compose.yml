@@ -1,0 +1,18 @@
+services:
+  vectorsync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6309:6309"
+    env_file:
+      - .env
+    networks:
+      - vectorsync
+
+volumes:
+  vectorsync:
+
+networks:
+  vectorsync:
+    driver: bridge
