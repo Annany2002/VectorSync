@@ -1,0 +1,49 @@
+linters-settings:
+  govet:
+    enable-all: true
+  gocyclo:
+    min-complexity: 15
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck      # Checks for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Go's built-in type checker
+    - ineffassign   # Detects ineffectual assignments
+    - staticcheck   # Advanced static analysis
+    - typecheck     # Type checking like go compiler
+    - unused        # Checks for unused code
+    - gofmt         # Checks if code is formatted
+    - goimports     # Checks imports are formatted
+    - misspell      # Finds commonly misspelled words
+    - revive        # Fast, configurable linter
+    - gosec         # Security issues
+    - bodyclose     # Checks HTTP response bodies are closed
+    - sqlclosecheck # Checks SQL rows/statements are closed
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - dupl
+
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - bin
+    - vendor
+    - .git
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
