@@ -1,4 +1,4 @@
-.PHONY: help build run test fmt lint clean docker-build docker-up docker-down
+.PHONY: help build dev test fmt lint clean docker-build docker-up docker-down
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -7,7 +7,7 @@ help: ## Show this help message
 build: ## Build the binary
 	go build -o bin/vectorsync cmd/server/main.go
 
-run: ## Run the server locally
+dev: ## Run the server in development mode
 	air
 
 test: ## Run tests
