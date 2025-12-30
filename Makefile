@@ -8,7 +8,7 @@ build: ## Build the binary
 	go build -o bin/vectorsync cmd/server/main.go
 
 dev: ## Run the server in development mode
-	air
+	@air
 
 test: ## Run tests
 	go test -v ./...
