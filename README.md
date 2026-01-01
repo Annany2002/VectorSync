@@ -222,6 +222,56 @@ go build -o bin/vectorsync cmd/server/main.go
 docker build -t vectorsync:latest .
 ```
 
+### Makefile Commands
+
+VectorSync includes a Makefile for common development tasks:
+
+```bash
+# Show all available commands
+make help
+
+# Run all checks and build
+make all
+
+# Build the production binary
+make build
+
+# Run the server (builds first)
+make run
+
+# Run in development mode with hot reload (requires air)
+make dev
+
+# Run tests
+make test
+
+# Format code with goimports
+make format
+
+# Run linters
+make lint
+
+# Auto-fix linting issues
+make fix
+
+# Clean build artifacts
+make clean
+
+# Docker commands
+make docker-build    # Build Docker image
+make docker-up       # Start containers
+make docker-down     # Stop containers
+
+# Generate protobuf code
+make proto
+
+# Run database migrations
+make migrate-up
+
+# Install development tools (goimports, golangci-lint, air)
+make install-tools
+```
+
 ### Code Generation
 ```bash
 # Generate protobuf code
@@ -251,13 +301,3 @@ See [ROADMAP.md](./ROADMAP.md) for detailed feature tracking and future plans.
 - Search latency: < 50ms (p99) for 1M vectors
 - Throughput: 1000+ searches/sec on single instance
 - Index size: ~4GB for 1M 768-dimensional vectors
-
----
-
-## Acknowledgments
-
-Built with:
-- [pgvector](https://github.com/pgvector/pgvector) - PostgreSQL vector similarity search
-- [gRPC](https://grpc.io/) - High-performance RPC framework
-- [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway) - gRPC to HTTP/JSON proxy
-- [Logrus](https://github.com/sirupsen/logrus) - Structured logging

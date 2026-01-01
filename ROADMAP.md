@@ -32,7 +32,7 @@ This document tracks the detailed feature implementation status and future plans
   - [x] Create collection with name, vector dimension, optional metadata schema
   - [ ] Get collection by ID
   - [x] Get collection by name (implemented for duplicate checking)
-  - [ ] List all collections with pagination
+  - [x] List all collections with pagination
   - [ ] Delete collection (cascade delete all documents)
   - [x] Validate vector dimension on all operations
 
@@ -150,7 +150,7 @@ This document tracks the detailed feature implementation status and future plans
   - [x] Config documentation
 
 - [ ] **Build & CI**
-  - [ ] Makefile for common tasks
+  - [x] Makefile for common tasks
   - [ ] GitHub Actions workflow (lint, test, build)
   - [ ] golangci-lint configuration
   - [ ] Code formatting checks
