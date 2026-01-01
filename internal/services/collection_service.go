@@ -53,10 +53,31 @@ func (s *CollectionService) CreateCollection(ctx context.Context, name string, v
 	return collection, nil
 }
 
-// ListCollections retrieves all the collections
+// Pagination defaults
+const (
+	DefaultLimit = 20
+	MaxLimit     = 100
+)
+
+// ListCollections retrieves collections with pagination
 func (s *CollectionService) ListCollections(ctx context.Context, limit, offset int) ([]models.Collection, error) {
-	// Call the list collection
-	collections, err := s.repo.ListAll(ctx, limit, offset)
+	// Apply default limit if not specified or invalid
+	if limit <= 0 {
+		limit = DefaultLimit
+	}
+
+	// Cap limit to prevent database overload
+	if limit > MaxLimit {
+		limit = MaxLimit
+	}
+
+	// Ensure offset is non-negative
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Call the repository
+	collections, err := s.repo.List(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}

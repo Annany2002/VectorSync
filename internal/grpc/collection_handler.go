@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"errors"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -52,16 +51,12 @@ func (h *CollectionHandler) CreateCollection(ctx context.Context, req *pb.Create
 
 // ListCollections retrieves the collections with pagination
 func (h *CollectionHandler) ListCollections(ctx context.Context, req *pb.ListCollectionsRequest) (*pb.ListCollectionsResponse, error) {
-	// Extract the limit and offset from the request
-	limit := req.GetLimit()
-	offset := req.GetOffset()
-
-	if limit < 0 || offset < 0 {
-		return nil, errors.New("limit and offset cannot be negative")
-	}
+	// Extract pagination parameters - service layer handles defaults and caps
+	limit := int(req.GetLimit())
+	offset := int(req.GetOffset())
 
 	// Call the service layer for listing collections
-	collections, err := h.collectionService.ListCollections(ctx, int(limit), int(offset))
+	collections, err := h.collectionService.ListCollections(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}

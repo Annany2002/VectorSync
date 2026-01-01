@@ -61,8 +61,8 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 	return &collection, nil
 }
 
-// ListAll returns all the collections in the database
-func (r *CollectionRepo) ListAll(ctx context.Context, limit, offset int) ([]models.Collection, error) {
+// List returns collections with pagination support
+func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.Collection, error) {
 	selectQuery := `
 		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at
 		FROM collections
