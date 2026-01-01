@@ -52,3 +52,13 @@ func (s *CollectionService) CreateCollection(ctx context.Context, name string, v
 	}
 	return collection, nil
 }
+
+// ListCollections retrieves all the collections
+func (s *CollectionService) ListCollections(ctx context.Context, limit, offset int) ([]models.Collection, error) {
+	// Call the list collection
+	collections, err := s.repo.ListAll(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return collections, nil
+}

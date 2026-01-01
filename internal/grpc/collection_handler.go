@@ -2,11 +2,13 @@ package grpc
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/Annany2002/vector-sync/api/proto/v1"
+	"github.com/Annany2002/vector-sync/internal/models"
 	"github.com/Annany2002/vector-sync/internal/services"
 )
 
@@ -42,31 +44,67 @@ func (h *CollectionHandler) CreateCollection(ctx context.Context, req *pb.Create
 		return nil, err
 	}
 
-	// Convert the metadata schema back to protobuf map[string]*Struct
+	// Build and return the gRPC response using helper function
+	return &pb.CreateCollectionResponse{
+		Collection: convertToProto(collection),
+	}, nil
+}
+
+// ListCollections retrieves the collections with pagination
+func (h *CollectionHandler) ListCollections(ctx context.Context, req *pb.ListCollectionsRequest) (*pb.ListCollectionsResponse, error) {
+	// Extract the limit and offset from the request
+	limit := req.GetLimit()
+	offset := req.GetOffset()
+
+	if limit < 0 || offset < 0 {
+		return nil, errors.New("limit and offset cannot be negative")
+	}
+
+	// Call the service layer for listing collections
+	collections, err := h.collectionService.ListCollections(ctx, int(limit), int(offset))
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert []models.Collection to []*pb.Collection
+	pbCollections := make([]*pb.Collection, 0, len(collections))
+	for _, c := range collections {
+		pbCollections = append(pbCollections, convertToProto(&c))
+	}
+
+	// Return ListCollectionsResponse (plural) with repeated collections field
+	return &pb.ListCollectionsResponse{Collections: pbCollections}, nil
+}
+
+// convertToProto converts a models.Collection to a pb.Collection
+// This helper function centralizes the conversion logic for reuse
+func convertToProto(c *models.Collection) *pb.Collection {
+	// Convert metadata schema from map[string]any to map[string]*structpb.Struct
+	// This is needed because gRPC uses protobuf types, not Go native types
 	metadataSchemaProto := make(map[string]*structpb.Struct)
-	for key, value := range collection.MetadataSchema {
+	for key, value := range c.MetadataSchema {
+		// Type assertion: check if value is a map[string]any
 		valueMap, ok := value.(map[string]any)
 		if !ok {
-			continue
+			continue // Skip non-map values
 		}
+		// Convert Go map to protobuf Struct
 		structValue, err := structpb.NewStruct(valueMap)
 		if err != nil {
-			continue
+			continue // Skip on conversion error
 		}
 		metadataSchemaProto[key] = structValue
 	}
 
-	// Build and return the gRPC response
-	return &pb.CreateCollectionResponse{
-		Collection: &pb.Collection{
-			Common: &pb.Common{
-				Id:        collection.ID,
-				CreatedAt: timestamppb.New(collection.CreatedAt),
-				UpdatedAt: timestamppb.New(collection.UpdatedAt),
-			},
-			Name:            collection.Name,
-			VectorDimension: int32(collection.VectorDimension),
-			MetadataSchema:  metadataSchemaProto,
+	// Build and return the protobuf Collection message
+	return &pb.Collection{
+		Common: &pb.Common{
+			Id:        c.ID,
+			CreatedAt: timestamppb.New(c.CreatedAt),
+			UpdatedAt: timestamppb.New(c.UpdatedAt),
 		},
-	}, nil
+		Name:            c.Name,
+		VectorDimension: int32(c.VectorDimension),
+		MetadataSchema:  metadataSchemaProto,
+	}
 }

@@ -61,6 +61,52 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 	return &collection, nil
 }
 
+// ListAll returns all the collections in the database
+func (r *CollectionRepo) ListAll(ctx context.Context, limit, offset int) ([]models.Collection, error) {
+	selectQuery := `
+		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at
+		FROM collections
+		ORDER BY id
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.QueryContext(ctx, selectQuery, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var collections []models.Collection
+	for rows.Next() {
+		var collection models.Collection
+		var metadataBytes []byte
+
+		err = rows.Scan(
+			&collection.ID,
+			&collection.Name,
+			&collection.VectorDimension,
+			&metadataBytes,
+			&collection.CreatedAt,
+			&collection.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert JSON bytes back to map
+		if len(metadataBytes) > 0 {
+			err = json.Unmarshal(metadataBytes, &collection.MetadataSchema)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		collections = append(collections, collection)
+	}
+
+	return collections, nil
+}
+
 // GetCollectionByName gets a collection by name
 func (r *CollectionRepo) GetCollectionByName(ctx context.Context, name string) (*models.Collection, error) {
 	// Selecting the columns we need
