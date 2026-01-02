@@ -28,18 +28,22 @@ func main() {
 
 	// Create repository layer (talks to database)
 	collectionRepo := db.NewCollectionRepo(dbConn)
+	documentRepo := db.NewDocumentRepo(dbConn)
 
 	// Create service layer (business logic)
 	collectionService := services.NewCollectionService(*collectionRepo)
+	documentService := services.NewDocumentService(*documentRepo)
 
 	// Create handler layer (handles gRPC requests)
 	collectionHandler := grpcHandler.NewCollectionHandler(collectionService)
+	documentHandler := grpcHandler.NewDocumentHandler(documentService)
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
-	// Register our collection service with the gRPC server
+	// Register our services with the gRPC server
 	pb.RegisterCollectionServiceServer(grpcServer, collectionHandler)
+	pb.RegisterDocumentServiceServer(grpcServer, documentHandler)
 
 	// Enable gRPC reflection for grpcurl
 	reflection.Register(grpcServer)

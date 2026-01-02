@@ -1,16 +1,17 @@
 package grpc
 
 import (
-	"context"
-
-	client "github.com/Annany2002/vector-sync/api/proto/v1"
+	pb "github.com/Annany2002/vector-sync/api/proto/v1"
+	"github.com/Annany2002/vector-sync/internal/services"
 )
 
+// DocumentHandler implements the DocumentServiceServer interface
 type DocumentHandler struct {
-	document client.DocumentServiceClient
+	documentService *services.DocumentService
+	pb.UnimplementedDocumentServiceServer
 }
 
-func (d *DocumentHandler) CreateDocument(ctx context.Context, req *client.CreateDocumentRequest) (*client.CreateDocumentResponse, error) {
-	// TODO: Implement document creation
-	return nil, nil
+// NewDocumentHandler creates a new collection handler
+func NewDocumentHandler(svc *services.DocumentService) *DocumentHandler {
+	return &DocumentHandler{documentService: svc}
 }
