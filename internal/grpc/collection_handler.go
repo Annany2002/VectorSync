@@ -93,13 +93,12 @@ func convertToProto(c *models.Collection) *pb.Collection {
 
 	// Build and return the protobuf Collection message
 	return &pb.Collection{
-		Common: &pb.Common{
-			Id:        c.ID,
-			CreatedAt: timestamppb.New(c.CreatedAt),
-			UpdatedAt: timestamppb.New(c.UpdatedAt),
-		},
+		Id:              c.ID,
+		CreatedAt:       timestamppb.New(c.CreatedAt),
+		UpdatedAt:       timestamppb.New(c.UpdatedAt),
 		Name:            c.Name,
 		VectorDimension: int32(c.VectorDimension),
 		MetadataSchema:  metadataSchemaProto,
+		DocumentCount:   c.DocumentCount,
 	}
 }

@@ -7,18 +7,22 @@ option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
-import "api/proto/v1/common.proto";
-
 // Collections represents a collection of documents
 message Collection {
-    common.Common common = 1;
-
+    // unique id of the collection
+    string id = 1;
+    // creation timestamp
+    google.protobuf.Timestamp created_at = 2;
+    // update timestamp
+    google.protobuf.Timestamp updated_at = 3;
     // name of the collection (must be unique)
-    string name = 2;
+    string name = 4;
     // dimension of the vector space
-    int32 vector_dimension = 3;
+    int32 vector_dimension = 5;
     // schema for metadata
-    map<string, google.protobuf.Struct> metadata_schema = 4;
+    map<string, google.protobuf.Struct> metadata_schema = 6;
+    // number of documents in this collection
+    int64 document_count = 7;
 }
 
 

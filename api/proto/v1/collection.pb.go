@@ -25,16 +25,23 @@ const (
 
 // Collections represents a collection of documents
 type Collection struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Common *Common                `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// unique id of the collection
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// creation timestamp
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// update timestamp
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// name of the collection (must be unique)
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 	// dimension of the vector space
-	VectorDimension int32 `protobuf:"varint,3,opt,name=vector_dimension,json=vectorDimension,proto3" json:"vector_dimension,omitempty"`
+	VectorDimension int32 `protobuf:"varint,5,opt,name=vector_dimension,json=vectorDimension,proto3" json:"vector_dimension,omitempty"`
 	// schema for metadata
-	MetadataSchema map[string]*structpb.Struct `protobuf:"bytes,4,rep,name=metadata_schema,json=metadataSchema,proto3" json:"metadata_schema,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	MetadataSchema map[string]*structpb.Struct `protobuf:"bytes,6,rep,name=metadata_schema,json=metadataSchema,proto3" json:"metadata_schema,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// number of documents in this collection
+	DocumentCount int64 `protobuf:"varint,7,opt,name=document_count,json=documentCount,proto3" json:"document_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Collection) Reset() {
@@ -67,9 +74,23 @@ func (*Collection) Descriptor() ([]byte, []int) {
 	return file_api_proto_v1_collection_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Collection) GetCommon() *Common {
+func (x *Collection) GetId() string {
 	if x != nil {
-		return x.Common
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Collection) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Collection) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
 	}
 	return nil
 }
@@ -93,6 +114,13 @@ func (x *Collection) GetMetadataSchema() map[string]*structpb.Struct {
 		return x.MetadataSchema
 	}
 	return nil
+}
+
+func (x *Collection) GetDocumentCount() int64 {
+	if x != nil {
+		return x.DocumentCount
+	}
+	return 0
 }
 
 // CreateCollectionRequest represents a request to create a collection
@@ -502,13 +530,18 @@ var File_api_proto_v1_collection_proto protoreflect.FileDescriptor
 
 const file_api_proto_v1_collection_proto_rawDesc = "" +
 	"\n" +
-	"\x1dapi/proto/v1/collection.proto\x12\vcollections\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19api/proto/v1/common.proto\"\xa5\x02\n" +
+	"\x1dapi/proto/v1/collection.proto\x12\vcollections\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xaa\x03\n" +
 	"\n" +
-	"Collection\x12&\n" +
-	"\x06common\x18\x01 \x01(\v2\x0e.common.CommonR\x06common\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12)\n" +
-	"\x10vector_dimension\x18\x03 \x01(\x05R\x0fvectorDimension\x12T\n" +
-	"\x0fmetadata_schema\x18\x04 \x03(\v2+.collections.Collection.MetadataSchemaEntryR\x0emetadataSchema\x1aZ\n" +
+	"Collection\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
+	"\n" +
+	"created_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12)\n" +
+	"\x10vector_dimension\x18\x05 \x01(\x05R\x0fvectorDimension\x12T\n" +
+	"\x0fmetadata_schema\x18\x06 \x03(\v2+.collections.Collection.MetadataSchemaEntryR\x0emetadataSchema\x12%\n" +
+	"\x0edocument_count\x18\a \x01(\x03R\rdocumentCount\x1aZ\n" +
 	"\x13MetadataSchemaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
 	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\x97\x02\n" +
@@ -571,33 +604,33 @@ var file_api_proto_v1_collection_proto_goTypes = []any{
 	(*DeleteCollectionResponse)(nil), // 8: collections.DeleteCollectionResponse
 	nil,                              // 9: collections.Collection.MetadataSchemaEntry
 	nil,                              // 10: collections.CreateCollectionRequest.MetadataSchemaEntry
-	(*Common)(nil),                   // 11: common.Common
-	(*timestamppb.Timestamp)(nil),    // 12: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),          // 13: google.protobuf.Struct
+	(*timestamppb.Timestamp)(nil),    // 11: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),          // 12: google.protobuf.Struct
 }
 var file_api_proto_v1_collection_proto_depIdxs = []int32{
-	11, // 0: collections.Collection.common:type_name -> common.Common
-	9,  // 1: collections.Collection.metadata_schema:type_name -> collections.Collection.MetadataSchemaEntry
-	10, // 2: collections.CreateCollectionRequest.metadata_schema:type_name -> collections.CreateCollectionRequest.MetadataSchemaEntry
-	0,  // 3: collections.CreateCollectionResponse.collection:type_name -> collections.Collection
-	0,  // 4: collections.ListCollectionResponse.collection:type_name -> collections.Collection
-	0,  // 5: collections.ListCollectionsResponse.collections:type_name -> collections.Collection
-	12, // 6: collections.DeleteCollectionResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	13, // 7: collections.Collection.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
-	13, // 8: collections.CreateCollectionRequest.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
-	1,  // 9: collections.CollectionService.CreateCollection:input_type -> collections.CreateCollectionRequest
-	3,  // 10: collections.CollectionService.ListCollection:input_type -> collections.ListCollectionRequest
-	5,  // 11: collections.CollectionService.ListCollections:input_type -> collections.ListCollectionsRequest
-	7,  // 12: collections.CollectionService.DeleteCollection:input_type -> collections.DeleteCollectionRequest
-	2,  // 13: collections.CollectionService.CreateCollection:output_type -> collections.CreateCollectionResponse
-	4,  // 14: collections.CollectionService.ListCollection:output_type -> collections.ListCollectionResponse
-	6,  // 15: collections.CollectionService.ListCollections:output_type -> collections.ListCollectionsResponse
-	8,  // 16: collections.CollectionService.DeleteCollection:output_type -> collections.DeleteCollectionResponse
-	13, // [13:17] is the sub-list for method output_type
-	9,  // [9:13] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	11, // 0: collections.Collection.created_at:type_name -> google.protobuf.Timestamp
+	11, // 1: collections.Collection.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 2: collections.Collection.metadata_schema:type_name -> collections.Collection.MetadataSchemaEntry
+	10, // 3: collections.CreateCollectionRequest.metadata_schema:type_name -> collections.CreateCollectionRequest.MetadataSchemaEntry
+	0,  // 4: collections.CreateCollectionResponse.collection:type_name -> collections.Collection
+	0,  // 5: collections.ListCollectionResponse.collection:type_name -> collections.Collection
+	0,  // 6: collections.ListCollectionsResponse.collections:type_name -> collections.Collection
+	11, // 7: collections.DeleteCollectionResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	12, // 8: collections.Collection.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
+	12, // 9: collections.CreateCollectionRequest.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
+	1,  // 10: collections.CollectionService.CreateCollection:input_type -> collections.CreateCollectionRequest
+	3,  // 11: collections.CollectionService.ListCollection:input_type -> collections.ListCollectionRequest
+	5,  // 12: collections.CollectionService.ListCollections:input_type -> collections.ListCollectionsRequest
+	7,  // 13: collections.CollectionService.DeleteCollection:input_type -> collections.DeleteCollectionRequest
+	2,  // 14: collections.CollectionService.CreateCollection:output_type -> collections.CreateCollectionResponse
+	4,  // 15: collections.CollectionService.ListCollection:output_type -> collections.ListCollectionResponse
+	6,  // 16: collections.CollectionService.ListCollections:output_type -> collections.ListCollectionsResponse
+	8,  // 17: collections.CollectionService.DeleteCollection:output_type -> collections.DeleteCollectionResponse
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_v1_collection_proto_init() }
@@ -605,7 +638,6 @@ func file_api_proto_v1_collection_proto_init() {
 	if File_api_proto_v1_collection_proto != nil {
 		return
 	}
-	file_api_proto_v1_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

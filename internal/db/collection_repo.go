@@ -22,10 +22,11 @@ func NewCollectionRepo(db *sql.DB) *CollectionRepo {
 // Create creates a new collection in the database
 func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any) (*models.Collection, error) {
 	// Only insert the fields we provide: name, vector_dim, metadata_schema
+	// document_count defaults to 0 in the database
 	insertQuery := `
 		INSERT INTO collections (name, vector_dim, metadata_schema)
 		VALUES ($1, $2, $3)
-		RETURNING id, name, vector_dim, metadata_schema, created_at, updated_at
+		RETURNING id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
 	`
 
 	// Convert map to JSON for JSONB column
@@ -45,6 +46,7 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 		&metadataBytes,
 		&collection.CreatedAt,
 		&collection.UpdatedAt,
+		&collection.DocumentCount,
 	)
 	if err != nil {
 		return nil, err
@@ -64,7 +66,7 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 // List returns collections with pagination support
 func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.Collection, error) {
 	selectQuery := `
-		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at
+		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
 		FROM collections
 		ORDER BY id
 		LIMIT $1 OFFSET $2
@@ -77,6 +79,8 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 	defer rows.Close()
 
 	var collections []models.Collection
+
+	// Scan all rows one by one
 	for rows.Next() {
 		var collection models.Collection
 		var metadataBytes []byte
@@ -88,6 +92,7 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 			&metadataBytes,
 			&collection.CreatedAt,
 			&collection.UpdatedAt,
+			&collection.DocumentCount,
 		)
 		if err != nil {
 			return nil, err
@@ -111,7 +116,7 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 func (r *CollectionRepo) GetCollectionByName(ctx context.Context, name string) (*models.Collection, error) {
 	// Selecting the columns we need
 	selectQuery := `
-		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at
+		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
 		FROM collections
 		WHERE name = $1
 	`
@@ -126,6 +131,7 @@ func (r *CollectionRepo) GetCollectionByName(ctx context.Context, name string) (
 		&metadataBytes,
 		&collection.CreatedAt,
 		&collection.UpdatedAt,
+		&collection.DocumentCount,
 	)
 	if err != nil {
 		return nil, err
