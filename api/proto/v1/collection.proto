@@ -79,6 +79,8 @@ message DeleteCollectionResponse {
     string id = 1;
     // timestamp of the deletion
     google.protobuf.Timestamp deleted_at = 2;
+    // no of documents deleted
+    int64 document_deleted = 3;
 }
 
 // CollectionService provides collection management operations

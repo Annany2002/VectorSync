@@ -112,24 +112,19 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 	return collections, nil
 }
 
-// ListById return a collection with a particular id
+// ListById returns a collection with a particular id
 func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*models.Collection, error) {
 	selectQuery := `
 		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
 		FROM collections
 		WHERE id = $1
 	`
-	rows, err := r.db.QueryContext(ctx, selectQuery, collectionId)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var collection models.Collection
 	var metadataBytes []byte
 
-	// Scan each field individually from the RETURNING clause
-	err = r.db.QueryRowContext(ctx, selectQuery, collectionId).Scan(
+	// Query single row by ID
+	err := r.db.QueryRowContext(ctx, selectQuery, collectionId).Scan(
 		&collection.ID,
 		&collection.Name,
 		&collection.VectorDimension,
@@ -151,6 +146,22 @@ func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*mo
 	}
 
 	return &collection, nil
+}
+
+// DeleteById deletes a collection with a particular id
+func (r *CollectionRepo) DeleteById(ctx context.Context, collectionId string) (int64, error) {
+	deleteQuery := `
+		DELETE FROM collections WHERE id = $1
+		RETURNING document_count
+	`
+
+	var documentCount int64
+	err := r.db.QueryRowContext(ctx, deleteQuery, collectionId).Scan(&documentCount)
+	if err != nil {
+		return 0, err
+	}
+
+	return documentCount, nil
 }
 
 // GetCollectionByName gets a collection by name

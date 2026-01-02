@@ -98,3 +98,18 @@ func (s *CollectionService) ListCollection(ctx context.Context, collectionId str
 	}
 	return collection, nil
 }
+
+// DeleteCollection deletes a collection with a particular `id`
+func (s *CollectionService) DeleteCollection(ctx context.Context, collectionId string) (int64, error) {
+	// Check if id is not empty
+	if collectionId == "" {
+		return 0, errors.New("collectionId cannot be empty")
+	}
+
+	// Call the repository
+	documentCount, err := s.repo.DeleteById(ctx, collectionId)
+	if err != nil {
+		return 0, err
+	}
+	return documentCount, nil
+}

@@ -89,6 +89,21 @@ func (h *CollectionHandler) ListCollection(ctx context.Context, req *pb.ListColl
 	return &pb.ListCollectionResponse{Collection: pbCollection}, nil
 }
 
+// DeleteCollection retrieves a collection with a particular `id`
+func (h *CollectionHandler) DeleteCollection(ctx context.Context, req *pb.DeleteCollectionRequest) (*pb.DeleteCollectionResponse, error) {
+	// Extract the collectionId
+	collectionId := req.GetId()
+
+	// Call the service layer for collection deletion
+	document_count, err := h.collectionService.DeleteCollection(ctx, collectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return ListCollectionResponse with id `collectionId`
+	return &pb.DeleteCollectionResponse{Id: collectionId, DeletedAt: timestamppb.Now(), DocumentDeleted: document_count}, nil
+}
+
 // convertToProto converts a models.Collection to a pb.Collection
 // This helper function centralizes the conversion logic for reuse
 func convertToProto(c *models.Collection) *pb.Collection {
