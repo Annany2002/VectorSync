@@ -83,3 +83,18 @@ func (s *CollectionService) ListCollections(ctx context.Context, limit, offset i
 	}
 	return collections, nil
 }
+
+// ListCollection retrieves a collection with an id
+func (s *CollectionService) ListCollection(ctx context.Context, collectionId string) (*models.Collection, error) {
+	// Check if id is not empty
+	if collectionId == "" {
+		return nil, errors.New("collectionId cannot be empty")
+	}
+
+	// Call the repository
+	collection, err := s.repo.ListById(ctx, collectionId)
+	if err != nil {
+		return nil, err
+	}
+	return collection, nil
+}

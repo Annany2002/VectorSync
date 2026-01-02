@@ -112,6 +112,47 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 	return collections, nil
 }
 
+// ListById return a collection with a particular id
+func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*models.Collection, error) {
+	selectQuery := `
+		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
+		FROM collections
+		WHERE id = $1
+	`
+	rows, err := r.db.QueryContext(ctx, selectQuery, collectionId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var collection models.Collection
+	var metadataBytes []byte
+
+	// Scan each field individually from the RETURNING clause
+	err = r.db.QueryRowContext(ctx, selectQuery, collectionId).Scan(
+		&collection.ID,
+		&collection.Name,
+		&collection.VectorDimension,
+		&metadataBytes,
+		&collection.CreatedAt,
+		&collection.UpdatedAt,
+		&collection.DocumentCount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert JSON bytes back to map
+	if len(metadataBytes) > 0 {
+		err = json.Unmarshal(metadataBytes, &collection.MetadataSchema)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &collection, nil
+}
+
 // GetCollectionByName gets a collection by name
 func (r *CollectionRepo) GetCollectionByName(ctx context.Context, name string) (*models.Collection, error) {
 	// Selecting the columns we need

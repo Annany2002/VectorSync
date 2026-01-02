@@ -71,6 +71,24 @@ func (h *CollectionHandler) ListCollections(ctx context.Context, req *pb.ListCol
 	return &pb.ListCollectionsResponse{Collections: pbCollections}, nil
 }
 
+// ListCollection retrieves a collection with a particular `id`
+func (h *CollectionHandler) ListCollection(ctx context.Context, req *pb.ListCollectionRequest) (*pb.ListCollectionResponse, error) {
+	// Extract the collectionId
+	collectionId := req.GetId()
+
+	// Call the service layer for listing collection
+	collection, err := h.collectionService.ListCollection(ctx, collectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert models.Collection to *pb.Collection
+	pbCollection := convertToProto(collection)
+
+	// Return ListCollectionResponse with id `collectionId`
+	return &pb.ListCollectionResponse{Collection: pbCollection}, nil
+}
+
 // convertToProto converts a models.Collection to a pb.Collection
 // This helper function centralizes the conversion logic for reuse
 func convertToProto(c *models.Collection) *pb.Collection {
