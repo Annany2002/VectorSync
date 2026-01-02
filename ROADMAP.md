@@ -28,13 +28,14 @@ This document tracks the detailed feature implementation status and future plans
 ## Current Release: v0.1.0-alpha (In Development)
 
 ### Core Vector Operations
-- [ ] **Collection Management**
+- [x] **Collection Management**
   - [x] Create collection with name, vector dimension, optional metadata schema
-  - [ ] Get collection by ID
+  - [x] Get collection by ID
   - [x] Get collection by name (implemented for duplicate checking)
   - [x] List all collections with pagination
-  - [ ] Delete collection (cascade delete all documents)
+  - [x] Delete collection (cascade delete all documents with count returned)
   - [x] Validate vector dimension on all operations
+  - [x] Document count tracking with database triggers
 
 - [ ] **Document Operations**
   - [ ] Insert single document (vector + metadata + optional content)
@@ -55,8 +56,8 @@ This document tracks the detailed feature implementation status and future plans
 ### API & Protocol
 - [ ] **gRPC API**
   - [x] Protocol Buffer definitions (v1)
-  - [ ] CollectionService implementation (1/4 methods: CreateCollection done)
-  - [ ] DocumentService implementation
+  - [x] CollectionService implementation (4/4 methods complete: Create, Get, List, Delete)
+  - [ ] DocumentService implementation (0/5 methods)
   - [ ] HealthService implementation
   - [x] Comprehensive error handling with status codes
   - [x] Request validation and sanitization
