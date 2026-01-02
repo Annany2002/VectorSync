@@ -7,20 +7,22 @@ option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
-import "api/proto/v1/common.proto";
-
 // Document represents a document in a collection
 message Document {
-    common.Common common = 1;
-
+    // unique id of the document
+    string id = 1;
+    // creation timestamp
+    google.protobuf.Timestamp created_at = 2;
+    // update timestamp
+    google.protobuf.Timestamp updated_at = 3;
     // id of the collection the document belongs to
-    string collection_id = 2;
+    string collection_id = 4;
     // content of the document
-    string content = 3;
+    string content = 5;
     // vector representation of the document
-    repeated float vector = 4;
+    repeated float vector = 6;
     // metadata associated with the document
-    map<string, google.protobuf.Struct> metadata = 5;
+    map<string, google.protobuf.Struct> metadata = 7;
 }
 
 // CreateDocumentRequest represents a request to create a document
