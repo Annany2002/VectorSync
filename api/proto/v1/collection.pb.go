@@ -477,9 +477,11 @@ type DeleteCollectionResponse struct {
 	// id of the deleted collection
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// timestamp of the deletion
-	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	DeletedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
+	// no of documents deleted
+	DocumentDeleted int64 `protobuf:"varint,3,opt,name=document_deleted,json=documentDeleted,proto3" json:"document_deleted,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DeleteCollectionResponse) Reset() {
@@ -526,6 +528,13 @@ func (x *DeleteCollectionResponse) GetDeletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *DeleteCollectionResponse) GetDocumentDeleted() int64 {
+	if x != nil {
+		return x.DocumentDeleted
+	}
+	return 0
+}
+
 var File_api_proto_v1_collection_proto protoreflect.FileDescriptor
 
 const file_api_proto_v1_collection_proto_rawDesc = "" +
@@ -568,11 +577,12 @@ const file_api_proto_v1_collection_proto_rawDesc = "" +
 	"\x17ListCollectionsResponse\x129\n" +
 	"\vcollections\x18\x01 \x03(\v2\x17.collections.CollectionR\vcollections\")\n" +
 	"\x17DeleteCollectionRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x90\x01\n" +
 	"\x18DeleteCollectionResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\n" +
-	"deleted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt2\x8e\x03\n" +
+	"deleted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\x12)\n" +
+	"\x10document_deleted\x18\x03 \x01(\x03R\x0fdocumentDeleted2\x8e\x03\n" +
 	"\x11CollectionService\x12_\n" +
 	"\x10CreateCollection\x12$.collections.CreateCollectionRequest\x1a%.collections.CreateCollectionResponse\x12Y\n" +
 	"\x0eListCollection\x12\".collections.ListCollectionRequest\x1a#.collections.ListCollectionResponse\x12\\\n" +
