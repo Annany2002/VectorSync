@@ -69,6 +69,7 @@ migrate-up:
 	psql $$DB_URL -f migrations/001_enable_pgvector.up.sql
 	psql $$DB_URL -f migrations/002_create_collections.up.sql
 	psql $$DB_URL -f migrations/003_create_documents.up.sql
+	psql $$DB_URL -f migrations/004_add_document_count.up.sql
 
 # Install development tools
 install-tools:
