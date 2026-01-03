@@ -1,7 +1,7 @@
 -- Create documents table
 -- Stores document embeddings, metadata, and optional content
 CREATE TABLE documents (
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     collection_id UUID NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
     vector vector NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb NOT NULL,
