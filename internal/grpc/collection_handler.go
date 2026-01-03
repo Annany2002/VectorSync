@@ -45,7 +45,7 @@ func (h *CollectionHandler) CreateCollection(ctx context.Context, req *pb.Create
 
 	// Build and return the gRPC response using helper function
 	return &pb.CreateCollectionResponse{
-		Collection: convertToProto(collection),
+		Collection: convertToProtoCollection(collection),
 	}, nil
 }
 
@@ -64,7 +64,7 @@ func (h *CollectionHandler) ListCollections(ctx context.Context, req *pb.ListCol
 	// Convert []models.Collection to []*pb.Collection
 	pbCollections := make([]*pb.Collection, 0, len(collections))
 	for _, c := range collections {
-		pbCollections = append(pbCollections, convertToProto(&c))
+		pbCollections = append(pbCollections, convertToProtoCollection(&c))
 	}
 
 	// Return ListCollectionsResponse (plural) with repeated collections field
@@ -83,7 +83,7 @@ func (h *CollectionHandler) ListCollection(ctx context.Context, req *pb.ListColl
 	}
 
 	// Convert models.Collection to *pb.Collection
-	pbCollection := convertToProto(collection)
+	pbCollection := convertToProtoCollection(collection)
 
 	// Return ListCollectionResponse with id `collectionId`
 	return &pb.ListCollectionResponse{Collection: pbCollection}, nil
@@ -104,9 +104,8 @@ func (h *CollectionHandler) DeleteCollection(ctx context.Context, req *pb.Delete
 	return &pb.DeleteCollectionResponse{Id: collectionId, DeletedAt: timestamppb.Now(), DocumentDeleted: document_count}, nil
 }
 
-// convertToProto converts a models.Collection to a pb.Collection
-// This helper function centralizes the conversion logic for reuse
-func convertToProto(c *models.Collection) *pb.Collection {
+// convertToProtoCollection converts a models.Collection to a pb.Collection
+func convertToProtoCollection(c *models.Collection) *pb.Collection {
 	// Convert metadata schema from map[string]any to map[string]*structpb.Struct
 	// This is needed because gRPC uses protobuf types, not Go native types
 	metadataSchemaProto := make(map[string]*structpb.Struct)

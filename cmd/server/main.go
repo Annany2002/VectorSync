@@ -32,7 +32,7 @@ func main() {
 
 	// Create service layer (business logic)
 	collectionService := services.NewCollectionService(*collectionRepo)
-	documentService := services.NewDocumentService(*documentRepo)
+	documentService := services.NewDocumentService(*documentRepo, *collectionRepo)
 
 	// Create handler layer (handles gRPC requests)
 	collectionHandler := grpcHandler.NewCollectionHandler(collectionService)
