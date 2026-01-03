@@ -6,11 +6,15 @@ CREATE TABLE collections (
     vector_dim INTEGER NOT NULL CHECK (vector_dim > 0),
     metadata_schema JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    document_count BIGINT NOT NULL DEFAULT 0
 );
 
 -- Create index on name for faster lookups
 CREATE INDEX idx_collections_name ON collections(name);
+
+-- Create index on document_count for sorting/filtering
+CREATE INDEX idx_collections_document_count ON collections(document_count);
 
 -- Create trigger function to auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

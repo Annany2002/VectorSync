@@ -18,14 +18,51 @@ CREATE INDEX idx_documents_collection_id ON documents(collection_id);
 CREATE INDEX idx_documents_metadata ON documents USING gin(metadata);
 
 -- Full-text search index on content (optional for hybrid search)
--- Enables queries like: WHERE to_tsvector('english', content) @@ to_tsquery('search term')
-CREATE INDEX idx_documents_content_fts ON documents USING gin(to_tsvector('english', content));
+-- Enables queries like: WHERE to_tsvector('english', COALESCE(content, '')) @@ to_tsquery('search term')
+-- COALESCE handles NULL content gracefully by treating it as empty string
+CREATE INDEX idx_documents_content_fts ON documents USING gin(to_tsvector('english', COALESCE(content, '')));
 
 -- Attach updated_at trigger to documents table
 CREATE TRIGGER update_documents_updated_at
     BEFORE UPDATE ON documents
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Create trigger functions to maintain document_count in collections table
+-- These keep the count synchronized automatically when documents are inserted/deleted
+
+-- Increment document_count when a document is inserted
+CREATE OR REPLACE FUNCTION increment_document_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE collections
+    SET document_count = document_count + 1
+    WHERE id = NEW.collection_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Decrement document_count when a document is deleted
+CREATE OR REPLACE FUNCTION decrement_document_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE collections
+    SET document_count = document_count - 1
+    WHERE id = OLD.collection_id;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach document count triggers to documents table
+CREATE TRIGGER increment_collection_doc_count
+    AFTER INSERT ON documents
+    FOR EACH ROW
+    EXECUTE FUNCTION increment_document_count();
+
+CREATE TRIGGER decrement_collection_doc_count
+    AFTER DELETE ON documents
+    FOR EACH ROW
+    EXECUTE FUNCTION decrement_document_count();
 
 -- Note: Vector similarity index (IVFFlat/HNSW) can be added later for ANN search
 -- For MVP brute-force search, no vector index is needed
