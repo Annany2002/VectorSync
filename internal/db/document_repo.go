@@ -103,3 +103,65 @@ func stringToVector(s string) ([]float32, error) {
 
 	return vec, nil
 }
+
+// List returns documents from a specific collection with pagination support
+func (r *DocumentRepo) List(ctx context.Context, collectionID string, limit, offset int) ([]models.Document, error) {
+	selectQuery := `
+		SELECT id, collection_id, vector, metadata, content, created_at, updated_at
+		FROM documents
+		WHERE collection_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, selectQuery, collectionID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var documents []models.Document
+
+	// Scan all rows one by one
+	for rows.Next() {
+		var document models.Document
+		var vectorStrReturned string
+		var metadataBytes []byte
+
+		err = rows.Scan(
+			&document.ID,
+			&document.CollectionID,
+			&vectorStrReturned,
+			&metadataBytes,
+			&document.Content,
+			&document.CreatedAt,
+			&document.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse vector string back to []float32
+		document.Vector, err = stringToVector(vectorStrReturned)
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse metadata JSON back to map
+		if len(metadataBytes) > 0 {
+			err = json.Unmarshal(metadataBytes, &document.Metadata)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		documents = append(documents, document)
+	}
+
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return documents, nil
+}

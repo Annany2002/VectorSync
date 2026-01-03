@@ -26,9 +26,9 @@ func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.Collecti
 }
 
 // CreateDocument creates a new document
-func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, content string, vector []float32, metadata map[string]any) (*models.Document, error) {
+func (s *DocumentService) CreateDocument(ctx context.Context, collectionId, content string, vector []float32, metadata map[string]any) (*models.Document, error) {
 	// Perform null checks
-	if collectionID == "" {
+	if collectionId == "" {
 		return nil, errors.New("collection ID is required")
 	}
 	if len(vector) == 0 {
@@ -39,9 +39,9 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, cont
 	}
 
 	// Collection exists (and fetch it for dimension validation)
-	collection, err := s.collectionRepo.ListById(ctx, collectionID)
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection with ID %s not found", collectionID)
+		return nil, fmt.Errorf("collection with ID %s not found", collectionId)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch collection: %w", err)
@@ -67,10 +67,58 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, cont
 	}
 
 	// Create the document
-	document, err := s.documentRepo.Create(ctx, collectionID, content, vector, metadata)
+	document, err := s.documentRepo.Create(ctx, collectionId, content, vector, metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create document: %w", err)
 	}
 
 	return document, nil
+}
+
+// Pagination Defaults
+const (
+	defaultLimit = 50
+	maxLimit     = 1000
+)
+
+// ListDocuments returns documents from a collection with pagination
+func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string, limit, offset int32) ([]models.Document, error) {
+	// check for empty collectionId
+	if collectionId == "" {
+		return nil, errors.New("collection ID is required")
+	}
+
+	// check if collection exists
+	_, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("collection with ID %s not found", collectionId)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Validate and normalize limit
+	if limit < 0 {
+		return nil, errors.New("limit cannot be negative")
+	}
+	if limit == 0 {
+		limit = defaultLimit // Use default if not specified
+	}
+	if limit > maxLimit {
+		return nil, fmt.Errorf("limit cannot exceed %d", maxLimit)
+	}
+
+	// Validate offset
+	if offset < 0 {
+		return nil, errors.New("offset cannot be negative")
+	}
+	// Note: We allow any non-negative offset for deep pagination
+
+	// fetch documents from repository
+	documents, err := s.documentRepo.List(ctx, collectionId, int(limit), int(offset))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list documents: %w", err)
+	}
+
+	return documents, nil
 }

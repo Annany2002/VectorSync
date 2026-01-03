@@ -80,3 +80,27 @@ func convertToProtoDocument(c *models.Document) *pb.Document {
 		Metadata:     metadataProto,
 	}
 }
+
+// ListDocuments retrieves documents from a collection with pagination
+func (h *DocumentHandler) ListDocuments(ctx context.Context, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
+	// Extract parameters from request
+	collectionId := req.GetCollectionId()
+	limit := req.GetLimit()
+	offset := req.GetOffset()
+
+	// Call service layer to fetch documents
+	documents, err := h.documentService.ListDocuments(ctx, collectionId, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert models.Document slice to pb.Document slice
+	pbDocuments := make([]*pb.Document, len(documents))
+	for i, doc := range documents {
+		pbDocuments[i] = convertToProtoDocument(&doc)
+	}
+
+	return &pb.ListDocumentsResponse{
+		Documents: pbDocuments,
+	}, nil
+}
