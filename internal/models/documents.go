@@ -6,7 +6,7 @@ import "time"
 type Document struct {
 	ID           string         `json:"id" db:"id"`
 	CollectionID string         `json:"collection_id" db:"collection_id"`
-	Vector       []float64      `json:"vector" db:"vector"`
+	Vector       []float32      `json:"vector" db:"vector"`
 	Metadata     map[string]any `json:"metadata,omitempty" db:"metadata"`
 	Content      string         `json:"content,omitempty" db:"content"`
 	CreatedAt    time.Time      `json:"created_at" db:"created_at"`
