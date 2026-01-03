@@ -27,22 +27,18 @@ func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.Collecti
 
 // CreateDocument creates a new document
 func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, content string, vector []float32, metadata map[string]any) (*models.Document, error) {
-	// Check #1: Collection ID not empty
+	// Perform null checks
 	if collectionID == "" {
 		return nil, errors.New("collection ID is required")
 	}
-
-	// Check #2: Vector not empty
 	if len(vector) == 0 {
 		return nil, errors.New("vector cannot be empty")
 	}
-
-	// Check #3: Initialize metadata if nil
 	if metadata == nil {
 		metadata = make(map[string]any)
 	}
 
-	// Check #4: Collection exists (and fetch it for dimension validation)
+	// Collection exists (and fetch it for dimension validation)
 	collection, err := s.collectionRepo.ListById(ctx, collectionID)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("collection with ID %s not found", collectionID)
@@ -51,7 +47,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, cont
 		return nil, fmt.Errorf("failed to fetch collection: %w", err)
 	}
 
-	// Check #5: Vector dimension matches collection's expected dimension
+	// Vector dimension matches collection's expected dimension
 	if len(vector) != collection.VectorDimension {
 		return nil, fmt.Errorf(
 			"vector dimension mismatch: collection expects %d dimensions, got %d",
@@ -60,7 +56,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, cont
 		)
 	}
 
-	// Check #6: Validate vector values (no NaN or Infinity)
+	// Validate vector values (no NaN or Infinity)
 	for i, val := range vector {
 		if math.IsNaN(float64(val)) {
 			return nil, fmt.Errorf("vector contains NaN at index %d", i)
@@ -70,7 +66,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionID, cont
 		}
 	}
 
-	// All validations passed - create the document
+	// Create the document
 	document, err := s.documentRepo.Create(ctx, collectionID, content, vector, metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create document: %w", err)
