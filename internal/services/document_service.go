@@ -122,3 +122,22 @@ func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string
 
 	return documents, nil
 }
+
+// GetDocument returns a document with an id
+func (s *DocumentService) GetDocument(ctx context.Context, documentId string) (*models.Document, error) {
+	// check for empty documentId
+	if documentId == "" {
+		return nil, errors.New("document_id is required")
+	}
+
+	// fetch document from repository
+	document, err := s.documentRepo.GetById(ctx, documentId)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("document_id %s not found", documentId)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch document: %w", err)
+	}
+
+	return document, nil
+}

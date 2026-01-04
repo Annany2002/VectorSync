@@ -165,3 +165,46 @@ func (r *DocumentRepo) List(ctx context.Context, collectionId string, limit, off
 
 	return documents, nil
 }
+
+// GetById returns a document with an id
+func (r *DocumentRepo) GetById(ctx context.Context, documentId string) (*models.Document, error) {
+	selectQuery := `
+		SELECT id, collection_id, vector, metadata, content, created_at, updated_at
+		FROM documents
+		WHERE id = $1
+	`
+
+	var document models.Document
+	var vectorStrReturned string
+	var metadataBytes []byte
+
+	// Query single row by id
+	err := r.db.QueryRowContext(ctx, selectQuery, documentId).Scan(
+		&document.Id,
+		&document.CollectionId,
+		&vectorStrReturned,
+		&metadataBytes,
+		&document.Content,
+		&document.CreatedAt,
+		&document.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse vector string back to []float32
+	document.Vector, err = stringToVector(vectorStrReturned)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse metadata JSON back to map
+	if len(metadataBytes) > 0 {
+		err = json.Unmarshal(metadataBytes, &document.Metadata)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &document, nil
+}

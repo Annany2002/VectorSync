@@ -104,3 +104,20 @@ func (h *DocumentHandler) ListDocuments(ctx context.Context, req *pb.ListDocumen
 		Documents: pbDocuments,
 	}, nil
 }
+
+// ListDocument retrieves a document with an id
+func (h *DocumentHandler) ListDocument(ctx context.Context, req *pb.ListDocumentRequest) (*pb.ListDocumentResponse, error) {
+	// Extract the documentId
+	documentId := req.GetId()
+
+	// Call service layer to fetch document
+	document, err := h.documentService.GetDocument(ctx, documentId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to proto and return
+	return &pb.ListDocumentResponse{
+		Document: convertToProtoDocument(document),
+	}, nil
+}
