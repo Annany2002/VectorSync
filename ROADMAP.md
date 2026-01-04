@@ -9,19 +9,21 @@ This document tracks the detailed feature implementation status and future plans
 **v0.1.0-alpha:**
 
 **Completed:**
-- CreateCollection endpoint (full end-to-end working)
+- Collection CRUD (Create, Get, List, Delete) - 4/4 methods
+- Document CRUD (Create, Get, List, Delete) - 4/4 methods
 - Database schema & migrations (Collections + Documents tables)
-- Repository pattern with JSONB handling
+- Document count tracking with database triggers
+- Repository pattern with JSONB and pgvector handling
 - Service layer with validation & business logic
+- Pagination support for list operations
 - gRPC server with reflection
 - Logging infrastructure
 - Configuration management
 - Security basics (input validation, SQL injection prevention)
 
 **In Progress:**
-- Remaining CRUD operations (Get, List, Delete for Collections)
-- Document operations
 - Vector search functionality
+- Advanced document operations (upsert, batch operations)
 
 ---
 
@@ -38,11 +40,12 @@ This document tracks the detailed feature implementation status and future plans
   - [x] Document count tracking with database triggers
 
 - [ ] **Document Operations**
-  - [ ] Insert single document (vector + metadata + optional content)
+  - [x] Insert single document (vector + metadata + optional content)
+  - [x] List documents from collection with pagination
+  - [x] Get single document by ID
+  - [x] Delete document by ID
   - [ ] Upsert document (insert or update if exists)
   - [ ] Batch insert documents (multiple docs in one request)
-  - [ ] Get document by ID
-  - [ ] Delete document by ID
   - [ ] Batch delete documents
 
 - [ ] **Vector Search**
@@ -57,7 +60,7 @@ This document tracks the detailed feature implementation status and future plans
 - [ ] **gRPC API**
   - [x] Protocol Buffer definitions (v1)
   - [x] CollectionService implementation (4/4 methods complete: Create, Get, List, Delete)
-  - [ ] DocumentService implementation (0/5 methods)
+  - [x] DocumentService implementation (4/4 methods complete: CreateDocument, ListDocument, ListDocuments, DeleteDocument)
   - [ ] HealthService implementation
   - [x] Comprehensive error handling with status codes
   - [x] Request validation and sanitization
