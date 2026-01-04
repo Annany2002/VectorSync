@@ -141,3 +141,22 @@ func (s *DocumentService) GetDocument(ctx context.Context, documentId string) (*
 
 	return document, nil
 }
+
+// DeleteDocument deletes a document with an id
+func (s *DocumentService) DeleteDocument(ctx context.Context, documentId string) error {
+	// check for empty documentId
+	if documentId == "" {
+		return errors.New("document_id is required")
+	}
+
+	// delete document from repository
+	err := s.documentRepo.DeleteById(ctx, documentId)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("document_id %s not found", documentId)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to delete document: %w", err)
+	}
+
+	return nil
+}

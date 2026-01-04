@@ -121,3 +121,21 @@ func (h *DocumentHandler) ListDocument(ctx context.Context, req *pb.ListDocument
 		Document: convertToProtoDocument(document),
 	}, nil
 }
+
+// DeleteDocument deletes a document with an id
+func (h *DocumentHandler) DeleteDocument(ctx context.Context, req *pb.DeleteDocumentRequest) (*pb.DeleteDocumentResponse, error) {
+	// Extract the documentId
+	documentId := req.GetId()
+
+	// Call service layer to delete document
+	err := h.documentService.DeleteDocument(ctx, documentId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return success response with id and timestamp
+	return &pb.DeleteDocumentResponse{
+		Id:        documentId,
+		DeletedAt: timestamppb.Now(),
+	}, nil
+}

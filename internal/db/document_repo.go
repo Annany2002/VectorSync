@@ -208,3 +208,27 @@ func (r *DocumentRepo) GetById(ctx context.Context, documentId string) (*models.
 
 	return &document, nil
 }
+
+// Delete deletes a document with an id
+func (r *DocumentRepo) DeleteById(ctx context.Context, documentId string) error {
+	deleteQuery := `
+		DELETE FROM documents WHERE id = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, deleteQuery, documentId)
+	if err != nil {
+		return err
+	}
+
+	// Check if document was actually deleted
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
