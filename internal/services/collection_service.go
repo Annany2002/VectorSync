@@ -99,7 +99,7 @@ func (s *CollectionService) ListCollection(ctx context.Context, collectionId str
 	return collection, nil
 }
 
-// DeleteCollection deletes a collection with a particular `id`
+// DeleteCollection deletes a collection with an id
 func (s *CollectionService) DeleteCollection(ctx context.Context, collectionId string) (int64, error) {
 	// Check if id is not empty
 	if collectionId == "" {

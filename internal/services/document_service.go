@@ -29,7 +29,7 @@ func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.Collecti
 func (s *DocumentService) CreateDocument(ctx context.Context, collectionId, content string, vector []float32, metadata map[string]any) (*models.Document, error) {
 	// Perform null checks
 	if collectionId == "" {
-		return nil, errors.New("collection ID is required")
+		return nil, errors.New("collection_id is required")
 	}
 	if len(vector) == 0 {
 		return nil, errors.New("vector cannot be empty")
@@ -41,7 +41,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionId, cont
 	// Collection exists (and fetch it for dimension validation)
 	collection, err := s.collectionRepo.ListById(ctx, collectionId)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection with ID %s not found", collectionId)
+		return nil, fmt.Errorf("collection_id %s not found", collectionId)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch collection: %w", err)
@@ -85,13 +85,13 @@ const (
 func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string, limit, offset int32) ([]models.Document, error) {
 	// check for empty collectionId
 	if collectionId == "" {
-		return nil, errors.New("collection ID is required")
+		return nil, errors.New("collection_id is required")
 	}
 
 	// check if collection exists
 	_, err := s.collectionRepo.ListById(ctx, collectionId)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection with ID %s not found", collectionId)
+		return nil, fmt.Errorf("collection_id %s not found", collectionId)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch collection: %w", err)

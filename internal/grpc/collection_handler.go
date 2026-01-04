@@ -71,7 +71,7 @@ func (h *CollectionHandler) ListCollections(ctx context.Context, req *pb.ListCol
 	return &pb.ListCollectionsResponse{Collections: pbCollections}, nil
 }
 
-// ListCollection retrieves a collection with a particular `id`
+// ListCollection retrieves a collection with an id
 func (h *CollectionHandler) ListCollection(ctx context.Context, req *pb.ListCollectionRequest) (*pb.ListCollectionResponse, error) {
 	// Extract the collectionId
 	collectionId := req.GetId()
@@ -89,7 +89,7 @@ func (h *CollectionHandler) ListCollection(ctx context.Context, req *pb.ListColl
 	return &pb.ListCollectionResponse{Collection: pbCollection}, nil
 }
 
-// DeleteCollection retrieves a collection with a particular `id`
+// DeleteCollection retrieves a collection with a id
 func (h *CollectionHandler) DeleteCollection(ctx context.Context, req *pb.DeleteCollectionRequest) (*pb.DeleteCollectionResponse, error) {
 	// Extract the collectionId
 	collectionId := req.GetId()
@@ -125,7 +125,7 @@ func convertToProtoCollection(c *models.Collection) *pb.Collection {
 
 	// Build and return the protobuf Collection message
 	return &pb.Collection{
-		Id:              c.ID,
+		Id:              c.Id,
 		CreatedAt:       timestamppb.New(c.CreatedAt),
 		UpdatedAt:       timestamppb.New(c.UpdatedAt),
 		Name:            c.Name,

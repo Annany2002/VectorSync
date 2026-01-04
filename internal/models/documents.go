@@ -4,8 +4,8 @@ import "time"
 
 // Document represents a document in a collection
 type Document struct {
-	ID           string         `json:"id" db:"id"`
-	CollectionID string         `json:"collection_id" db:"collection_id"`
+	Id           string         `json:"id" db:"id"`
+	CollectionId string         `json:"collection_id" db:"collection_id"`
 	Vector       []float32      `json:"vector" db:"vector"`
 	Metadata     map[string]any `json:"metadata,omitempty" db:"metadata"`
 	Content      string         `json:"content,omitempty" db:"content"`

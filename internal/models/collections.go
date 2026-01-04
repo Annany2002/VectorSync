@@ -4,7 +4,7 @@ import "time"
 
 // Collection represents a vector collection
 type Collection struct {
-	ID              string         `json:"id" db:"id"`
+	Id              string         `json:"id" db:"id"`
 	Name            string         `json:"name" db:"name"`
 	VectorDimension int            `json:"vector_dimension" db:"vector_dim"`
 	MetadataSchema  map[string]any `json:"metadata_schema,omitempty" db:"metadata_schema"`

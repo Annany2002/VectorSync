@@ -71,10 +71,10 @@ func convertToProtoDocument(c *models.Document) *pb.Document {
 
 	// Build and return the protobuf Collection message
 	return &pb.Document{
-		Id:           c.ID,
+		Id:           c.Id,
 		CreatedAt:    timestamppb.New(c.CreatedAt),
 		UpdatedAt:    timestamppb.New(c.UpdatedAt),
-		CollectionId: c.CollectionID,
+		CollectionId: c.CollectionId,
 		Content:      c.Content,
 		Vector:       []float32(c.Vector),
 		Metadata:     metadataProto,

@@ -40,7 +40,7 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 
 	// Scan each field individually from the RETURNING clause
 	err = r.db.QueryRowContext(ctx, insertQuery, name, vectorDimension, metadataJSON).Scan(
-		&collection.ID,
+		&collection.Id,
 		&collection.Name,
 		&collection.VectorDimension,
 		&metadataBytes,
@@ -86,7 +86,7 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 		var metadataBytes []byte
 
 		err = rows.Scan(
-			&collection.ID,
+			&collection.Id,
 			&collection.Name,
 			&collection.VectorDimension,
 			&metadataBytes,
@@ -112,7 +112,7 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 	return collections, nil
 }
 
-// ListById returns a collection with a particular id
+// ListById returns a collection with an id
 func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*models.Collection, error) {
 	selectQuery := `
 		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
@@ -123,9 +123,9 @@ func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*mo
 	var collection models.Collection
 	var metadataBytes []byte
 
-	// Query single row by ID
+	// Query single row by Id
 	err := r.db.QueryRowContext(ctx, selectQuery, collectionId).Scan(
-		&collection.ID,
+		&collection.Id,
 		&collection.Name,
 		&collection.VectorDimension,
 		&metadataBytes,
@@ -148,7 +148,7 @@ func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*mo
 	return &collection, nil
 }
 
-// DeleteById deletes a collection with a particular id
+// DeleteById deletes a collection with an id
 func (r *CollectionRepo) DeleteById(ctx context.Context, collectionId string) (int64, error) {
 	deleteQuery := `
 		DELETE FROM collections WHERE id = $1
@@ -177,7 +177,7 @@ func (r *CollectionRepo) GetCollectionByName(ctx context.Context, name string) (
 	var metadataBytes []byte
 
 	err := r.db.QueryRowContext(ctx, selectQuery, name).Scan(
-		&collection.ID,
+		&collection.Id,
 		&collection.Name,
 		&collection.VectorDimension,
 		&metadataBytes,

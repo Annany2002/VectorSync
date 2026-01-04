@@ -19,7 +19,7 @@ func NewDocumentRepo(db *sql.DB) *DocumentRepo {
 }
 
 // Create inserts a new document into the database
-func (r *DocumentRepo) Create(ctx context.Context, collectionID, content string, vector []float32, metadata map[string]any) (*models.Document, error) {
+func (r *DocumentRepo) Create(ctx context.Context, collectionId, content string, vector []float32, metadata map[string]any) (*models.Document, error) {
 	// Convert vector to PostgreSQL format: '[0.1,0.2,0.3]'
 	vectorStr := vectorToString(vector)
 
@@ -39,9 +39,9 @@ func (r *DocumentRepo) Create(ctx context.Context, collectionID, content string,
 	var vectorStrReturned string
 	var metadataBytes []byte
 
-	err = r.db.QueryRowContext(ctx, insertQuery, collectionID, vectorStr, metadataJSON, content).Scan(
-		&document.ID,
-		&document.CollectionID,
+	err = r.db.QueryRowContext(ctx, insertQuery, collectionId, vectorStr, metadataJSON, content).Scan(
+		&document.Id,
+		&document.CollectionId,
 		&vectorStrReturned,
 		&metadataBytes,
 		&document.Content,
@@ -105,7 +105,7 @@ func stringToVector(s string) ([]float32, error) {
 }
 
 // List returns documents from a specific collection with pagination support
-func (r *DocumentRepo) List(ctx context.Context, collectionID string, limit, offset int) ([]models.Document, error) {
+func (r *DocumentRepo) List(ctx context.Context, collectionId string, limit, offset int) ([]models.Document, error) {
 	selectQuery := `
 		SELECT id, collection_id, vector, metadata, content, created_at, updated_at
 		FROM documents
@@ -114,7 +114,7 @@ func (r *DocumentRepo) List(ctx context.Context, collectionID string, limit, off
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.QueryContext(ctx, selectQuery, collectionID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, selectQuery, collectionId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,8 @@ func (r *DocumentRepo) List(ctx context.Context, collectionID string, limit, off
 		var metadataBytes []byte
 
 		err = rows.Scan(
-			&document.ID,
-			&document.CollectionID,
+			&document.Id,
+			&document.CollectionId,
 			&vectorStrReturned,
 			&metadataBytes,
 			&document.Content,
