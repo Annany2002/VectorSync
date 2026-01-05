@@ -545,6 +545,198 @@ func (x *DeleteDocumentResponse) GetDeletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// SearchDocumentRequest represents a request to search a similar vector within a collection
+type SearchDocumentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collection_id of the collection to search
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// search vector
+	QueryVector []float32 `protobuf:"fixed32,2,rep,packed,name=query_vector,json=queryVector,proto3" json:"query_vector,omitempty"`
+	// the number of returned results (top-k nearest neighbours)
+	TopK int32 `protobuf:"varint,3,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
+	// optional metadata filters (JSONB filtering)
+	MetadataFilter map[string]*structpb.Struct `protobuf:"bytes,4,rep,name=metadata_filter,json=metadataFilter,proto3" json:"metadata_filter,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// include vector in response or not (omit for smaller response size)
+	IncludeVector bool `protobuf:"varint,5,opt,name=include_vector,json=includeVector,proto3" json:"include_vector,omitempty"`
+	// minimum similarity threshold (0.0 - 1.0, 0 means no threshold)
+	MinThreshold  float32 `protobuf:"fixed32,6,opt,name=min_threshold,json=minThreshold,proto3" json:"min_threshold,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchDocumentRequest) Reset() {
+	*x = SearchDocumentRequest{}
+	mi := &file_api_proto_v1_document_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchDocumentRequest) ProtoMessage() {}
+
+func (x *SearchDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_v1_document_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchDocumentRequest.ProtoReflect.Descriptor instead.
+func (*SearchDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_v1_document_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SearchDocumentRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *SearchDocumentRequest) GetQueryVector() []float32 {
+	if x != nil {
+		return x.QueryVector
+	}
+	return nil
+}
+
+func (x *SearchDocumentRequest) GetTopK() int32 {
+	if x != nil {
+		return x.TopK
+	}
+	return 0
+}
+
+func (x *SearchDocumentRequest) GetMetadataFilter() map[string]*structpb.Struct {
+	if x != nil {
+		return x.MetadataFilter
+	}
+	return nil
+}
+
+func (x *SearchDocumentRequest) GetIncludeVector() bool {
+	if x != nil {
+		return x.IncludeVector
+	}
+	return false
+}
+
+func (x *SearchDocumentRequest) GetMinThreshold() float32 {
+	if x != nil {
+		return x.MinThreshold
+	}
+	return 0
+}
+
+// SearchResult represents a single search result with similarity score
+type SearchResult struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the matching document
+	Document *Document `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	// the similarity score(0.0 - 1.0, the higher is more similar)
+	Score         float32 `protobuf:"fixed32,2,opt,name=score,proto3" json:"score,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchResult) Reset() {
+	*x = SearchResult{}
+	mi := &file_api_proto_v1_document_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchResult) ProtoMessage() {}
+
+func (x *SearchResult) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_v1_document_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchResult.ProtoReflect.Descriptor instead.
+func (*SearchResult) Descriptor() ([]byte, []int) {
+	return file_api_proto_v1_document_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SearchResult) GetDocument() *Document {
+	if x != nil {
+		return x.Document
+	}
+	return nil
+}
+
+func (x *SearchResult) GetScore() float32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+// SearchDocumentResponse represents a response to a similarity search request
+type SearchDocumentResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// search results ordered by similarity (highest first)
+	Results       []*SearchResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchDocumentResponse) Reset() {
+	*x = SearchDocumentResponse{}
+	mi := &file_api_proto_v1_document_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchDocumentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchDocumentResponse) ProtoMessage() {}
+
+func (x *SearchDocumentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_v1_document_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchDocumentResponse.ProtoReflect.Descriptor instead.
+func (*SearchDocumentResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_v1_document_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SearchDocumentResponse) GetResults() []*SearchResult {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
 var File_api_proto_v1_document_proto protoreflect.FileDescriptor
 
 const file_api_proto_v1_document_proto_rawDesc = "" +
@@ -588,12 +780,28 @@ const file_api_proto_v1_document_proto_rawDesc = "" +
 	"\x16DeleteDocumentResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\n" +
-	"deleted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt2\xdc\x02\n" +
+	"deleted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\xfa\x02\n" +
+	"\x15SearchDocumentRequest\x12#\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12!\n" +
+	"\fquery_vector\x18\x02 \x03(\x02R\vqueryVector\x12\x13\n" +
+	"\x05top_k\x18\x03 \x01(\x05R\x04topK\x12\\\n" +
+	"\x0fmetadata_filter\x18\x04 \x03(\v23.document.SearchDocumentRequest.MetadataFilterEntryR\x0emetadataFilter\x12%\n" +
+	"\x0einclude_vector\x18\x05 \x01(\bR\rincludeVector\x12#\n" +
+	"\rmin_threshold\x18\x06 \x01(\x02R\fminThreshold\x1aZ\n" +
+	"\x13MetadataFilterEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"T\n" +
+	"\fSearchResult\x12.\n" +
+	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\x12\x14\n" +
+	"\x05score\x18\x02 \x01(\x02R\x05score\"J\n" +
+	"\x16SearchDocumentResponse\x120\n" +
+	"\aresults\x18\x01 \x03(\v2\x16.document.SearchResultR\aresults2\xb2\x03\n" +
 	"\x0fDocumentService\x12S\n" +
 	"\x0eCreateDocument\x12\x1f.document.CreateDocumentRequest\x1a .document.CreateDocumentResponse\x12M\n" +
 	"\fListDocument\x12\x1d.document.ListDocumentRequest\x1a\x1e.document.ListDocumentResponse\x12P\n" +
 	"\rListDocuments\x12\x1e.document.ListDocumentsRequest\x1a\x1f.document.ListDocumentsResponse\x12S\n" +
-	"\x0eDeleteDocument\x12\x1f.document.DeleteDocumentRequest\x1a .document.DeleteDocumentResponseB0Z.github.com/Annany2002/vector-sync/api/proto/v1b\x06proto3"
+	"\x0eDeleteDocument\x12\x1f.document.DeleteDocumentRequest\x1a .document.DeleteDocumentResponse\x12T\n" +
+	"\x0fSearchDocuments\x12\x1f.document.SearchDocumentRequest\x1a .document.SearchDocumentResponseB0Z.github.com/Annany2002/vector-sync/api/proto/v1b\x06proto3"
 
 var (
 	file_api_proto_v1_document_proto_rawDescOnce sync.Once
@@ -607,7 +815,7 @@ func file_api_proto_v1_document_proto_rawDescGZIP() []byte {
 	return file_api_proto_v1_document_proto_rawDescData
 }
 
-var file_api_proto_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_api_proto_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_api_proto_v1_document_proto_goTypes = []any{
 	(*Document)(nil),               // 0: document.Document
 	(*CreateDocumentRequest)(nil),  // 1: document.CreateDocumentRequest
@@ -618,35 +826,45 @@ var file_api_proto_v1_document_proto_goTypes = []any{
 	(*ListDocumentsResponse)(nil),  // 6: document.ListDocumentsResponse
 	(*DeleteDocumentRequest)(nil),  // 7: document.DeleteDocumentRequest
 	(*DeleteDocumentResponse)(nil), // 8: document.DeleteDocumentResponse
-	nil,                            // 9: document.Document.MetadataEntry
-	nil,                            // 10: document.CreateDocumentRequest.MetadataEntry
-	(*timestamppb.Timestamp)(nil),  // 11: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),        // 12: google.protobuf.Struct
+	(*SearchDocumentRequest)(nil),  // 9: document.SearchDocumentRequest
+	(*SearchResult)(nil),           // 10: document.SearchResult
+	(*SearchDocumentResponse)(nil), // 11: document.SearchDocumentResponse
+	nil,                            // 12: document.Document.MetadataEntry
+	nil,                            // 13: document.CreateDocumentRequest.MetadataEntry
+	nil,                            // 14: document.SearchDocumentRequest.MetadataFilterEntry
+	(*timestamppb.Timestamp)(nil),  // 15: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),        // 16: google.protobuf.Struct
 }
 var file_api_proto_v1_document_proto_depIdxs = []int32{
-	11, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
-	11, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
-	9,  // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
-	10, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
+	15, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
+	15, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
+	13, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
 	0,  // 4: document.CreateDocumentResponse.document:type_name -> document.Document
 	0,  // 5: document.ListDocumentResponse.document:type_name -> document.Document
 	0,  // 6: document.ListDocumentsResponse.documents:type_name -> document.Document
-	11, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	12, // 8: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
-	12, // 9: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	1,  // 10: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
-	3,  // 11: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
-	5,  // 12: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
-	7,  // 13: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
-	2,  // 14: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
-	4,  // 15: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
-	6,  // 16: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
-	8,  // 17: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
-	14, // [14:18] is the sub-list for method output_type
-	10, // [10:14] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	15, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	14, // 8: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
+	0,  // 9: document.SearchResult.document:type_name -> document.Document
+	10, // 10: document.SearchDocumentResponse.results:type_name -> document.SearchResult
+	16, // 11: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
+	16, // 12: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	16, // 13: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
+	1,  // 14: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
+	3,  // 15: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
+	5,  // 16: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
+	7,  // 17: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
+	9,  // 18: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
+	2,  // 19: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
+	4,  // 20: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
+	6,  // 21: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
+	8,  // 22: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
+	11, // 23: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
+	19, // [19:24] is the sub-list for method output_type
+	14, // [14:19] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_v1_document_proto_init() }
@@ -660,7 +878,7 @@ func file_api_proto_v1_document_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_v1_document_proto_rawDesc), len(file_api_proto_v1_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

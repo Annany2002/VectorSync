@@ -85,10 +85,41 @@ message DeleteDocumentResponse {
     google.protobuf.Timestamp deleted_at = 2;
 }
 
+// SearchDocumentRequest represents a request to search a similar vector within a collection
+message SearchDocumentRequest {
+    // collection_id of the collection to search
+    string collection_id = 1;
+    // search vector
+    repeated float query_vector = 2;
+    // the number of returned results (top-k nearest neighbours)
+    int32 top_k = 3;
+    // optional metadata filters (JSONB filtering)
+    map<string, google.protobuf.Struct> metadata_filter = 4;
+    // include vector in response or not (omit for smaller response size)
+    bool include_vector = 5;
+    // minimum similarity threshold (0.0 - 1.0, 0 means no threshold)
+    float min_threshold = 6;
+}
+
+// SearchResult represents a single search result with similarity score
+message SearchResult {
+    // the matching document
+    Document document = 1;
+    // the similarity score(0.0 - 1.0, the higher is more similar)
+    float score = 2;
+}
+
+// SearchDocumentResponse represents a response to a similarity search request
+message SearchDocumentResponse {
+    // search results ordered by similarity (highest first)
+    repeated SearchResult results = 1;
+}
+
 // DocumentService provides document management operations
 service DocumentService {
     rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse);
     rpc ListDocument (ListDocumentRequest) returns (ListDocumentResponse);
     rpc ListDocuments (ListDocumentsRequest) returns (ListDocumentsResponse);
     rpc DeleteDocument (DeleteDocumentRequest) returns (DeleteDocumentResponse);
+    rpc SearchDocuments (SearchDocumentRequest) returns (SearchDocumentResponse);
 }
