@@ -2,6 +2,9 @@ package grpc
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -11,15 +14,16 @@ import (
 	"github.com/Annany2002/vector-sync/internal/services"
 )
 
-// DocumentHandler implements the DocumentServiceServer interface
+// DocumentHandler implements the DocumentService and CollectionService interface
 type DocumentHandler struct {
-	documentService *services.DocumentService
+	documentService   *services.DocumentService
+	collectionService *services.CollectionService
 	pb.UnimplementedDocumentServiceServer
 }
 
 // NewDocumentHandler creates a new collection handler
-func NewDocumentHandler(svc *services.DocumentService) *DocumentHandler {
-	return &DocumentHandler{documentService: svc}
+func NewDocumentHandler(doc_svc *services.DocumentService, col_svc *services.CollectionService) *DocumentHandler {
+	return &DocumentHandler{documentService: doc_svc, collectionService: col_svc}
 }
 
 // CreateDocument creates a new document with a `collectionId`
@@ -137,5 +141,85 @@ func (h *DocumentHandler) DeleteDocument(ctx context.Context, req *pb.DeleteDocu
 	return &pb.DeleteDocumentResponse{
 		Id:        documentId,
 		DeletedAt: timestamppb.Now(),
+	}, nil
+}
+
+// SearchDocuments searches a similar document in collection
+func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDocumentRequest) (*pb.SearchDocumentResponse, error) {
+	// Extract the fields
+	collectionId := req.GetCollectionId()
+	queryVector := req.GetQueryVector()
+	includeVector := req.GetIncludeVector()
+	metadataFilter := req.GetMetadataFilter()
+	minThreshold := req.GetMinThreshold()
+
+	// basic validtions
+	if collectionId == "" {
+		return nil, errors.New("collection_id cannot be empty")
+	}
+	if len(queryVector) == 0 {
+		return nil, errors.New("length of query vector must be greater than zero")
+	}
+
+	// check if collection exists or not
+	collection, err := h.collectionService.ListCollection(ctx, collectionId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("collection with id %s not found", collectionId)
+		}
+		return nil, err
+	}
+
+	if collection.VectorDimension != len(queryVector) {
+		return nil, errors.New("dimensions of query vectors and result vectors does not match")
+	}
+
+	// Extract top_k (default to 10 if not provided)
+	topK := req.GetTopK()
+	if topK == 0 {
+		topK = 10
+	}
+
+	// Convert protobuf metadata filter to map[string]any
+	var metadataFilterMap map[string]any
+	if len(metadataFilter) > 0 {
+		metadataFilterMap = make(map[string]any)
+		for key, value := range metadataFilter {
+			metadataFilterMap[key] = value.AsMap()
+		}
+	}
+
+	// Call service layer to perform search
+	searchResults, err := h.documentService.SearchDocuments(
+		ctx,
+		collectionId,
+		queryVector,
+		topK,
+		metadataFilterMap,
+		minThreshold,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert db.SearchResult slice to pb.SearchResult slice
+	pbResults := make([]*pb.SearchResult, len(searchResults))
+	for i, result := range searchResults {
+		// Convert document to proto format
+		pbDoc := convertToProtoDocument(&result.Document)
+
+		// Optionally exclude vector from response (for smaller payload size)
+		if !includeVector {
+			pbDoc.Vector = nil
+		}
+
+		pbResults[i] = &pb.SearchResult{
+			Document: pbDoc,
+			Score:    result.Score,
+		}
+	}
+
+	return &pb.SearchDocumentResponse{
+		Results: pbResults,
 	}, nil
 }

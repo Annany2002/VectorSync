@@ -160,3 +160,80 @@ func (s *DocumentService) DeleteDocument(ctx context.Context, documentId string)
 
 	return nil
 }
+
+// Search Defaults
+const (
+	defaultTopK = 10
+	maxTopK     = 1000
+)
+
+// SearchDocuments performs vector similarity search
+// Returns top-K most similar documents with similarity scores
+func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId string, queryVector []float32, topK int32, metadataFilter map[string]any, minThreshold float32) ([]db.SearchResult, error) {
+	// Validate collection_id
+	if collectionId == "" {
+		return nil, errors.New("collection_id is required")
+	}
+
+	// Validate query vector
+	if len(queryVector) == 0 {
+		return nil, errors.New("query_vector cannot be empty")
+	}
+
+	// Check if collection exists and validate vector dimension
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Validate vector dimension matches collection
+	if len(queryVector) != collection.VectorDimension {
+		return nil, fmt.Errorf(
+			"query vector dimension mismatch: collection expects %d dimensions, got %d",
+			collection.VectorDimension,
+			len(queryVector),
+		)
+	}
+
+	// Validate query vector values (no NaN or Infinity)
+	for i, val := range queryVector {
+		if math.IsNaN(float64(val)) {
+			return nil, fmt.Errorf("query vector contains NaN at index %d", i)
+		}
+		if math.IsInf(float64(val), 0) {
+			return nil, fmt.Errorf("query vector contains Infinity at index %d", i)
+		}
+	}
+
+	// Validate and normalize top_k
+	if topK < 0 {
+		return nil, errors.New("top_k cannot be negative")
+	}
+	if topK == 0 {
+		topK = defaultTopK // Use default if not specified
+	}
+	if topK > maxTopK {
+		return nil, fmt.Errorf("top_k cannot exceed %d", maxTopK)
+	}
+
+	// Validate min_threshold (must be between 0.0 and 1.0)
+	if minThreshold < 0.0 || minThreshold > 1.0 {
+		return nil, errors.New("min_threshold must be between 0.0 and 1.0")
+	}
+
+	// Initialize metadata filter if nil
+	if metadataFilter == nil {
+		metadataFilter = make(map[string]any)
+	}
+
+	// Perform search via repository
+	results, err := s.documentRepo.Search(ctx, collectionId, queryVector, int(topK), metadataFilter, minThreshold)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search documents: %w", err)
+	}
+
+	return results, nil
+}

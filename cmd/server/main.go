@@ -36,7 +36,7 @@ func main() {
 
 	// Create handler layer (handles gRPC requests)
 	collectionHandler := grpcHandler.NewCollectionHandler(collectionService)
-	documentHandler := grpcHandler.NewDocumentHandler(documentService)
+	documentHandler := grpcHandler.NewDocumentHandler(documentService, collectionService)
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()

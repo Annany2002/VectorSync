@@ -232,3 +232,112 @@ func (r *DocumentRepo) DeleteById(ctx context.Context, documentId string) error 
 
 	return nil
 }
+
+// SearchResult represents a document with its similarity score
+type SearchResult struct {
+	Document models.Document
+	Score    float32
+}
+
+// Search performs vector similarity search using cosine similarity
+// Returns top-K results ordered by similarity (highest first)
+// Supports optional metadata filtering and minimum similarity threshold
+func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVector []float32, topK int, metadataFilter map[string]any, minThreshold float32) ([]SearchResult, error) {
+	// Convert query vector to PostgreSQL format
+	vectorStr := vectorToString(queryVector)
+
+	// Build the base query with cosine similarity
+	// pgvector's <=> operator is cosine distance (0 = identical, 2 = opposite)
+	// We convert to similarity: 1 - distance = similarity (1 = identical, -1 = opposite)
+	query := `
+		SELECT 
+			id, collection_id, vector, metadata, content, created_at, updated_at,
+			1 - (vector <=> $1::vector) AS similarity
+		FROM documents
+		WHERE collection_id = $2
+	`
+
+	args := []any{vectorStr, collectionId}
+	argIndex := 3
+
+	// Add metadata filtering if provided
+	if len(metadataFilter) > 0 {
+		for key, value := range metadataFilter {
+			// Use JSONB containment operator @> for metadata filtering
+			// metadata @> '{"key": "value"}' checks if metadata contains the key-value pair
+			query += fmt.Sprintf(" AND metadata @> $%d::jsonb", argIndex)
+
+			// Convert single key-value to JSONB format: {"key": "value"}
+			filterJSON, err := json.Marshal(map[string]any{key: value})
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal metadata filter: %w", err)
+			}
+			args = append(args, filterJSON)
+			argIndex++
+		}
+	}
+
+	// Add minimum threshold filtering if provided
+	if minThreshold > 0 {
+		query += fmt.Sprintf(" AND (1 - (vector <=> $1::vector)) >= $%d", argIndex)
+		args = append(args, minThreshold)
+		argIndex++
+	}
+
+	// Order by similarity (highest first) and limit to top-K
+	query += fmt.Sprintf(" ORDER BY vector <=> $1::vector LIMIT $%d", argIndex)
+	args = append(args, topK)
+
+	// Execute query
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute search query: %w", err)
+	}
+	defer rows.Close()
+
+	var results []SearchResult
+
+	// Scan all rows
+	for rows.Next() {
+		var result SearchResult
+		var vectorStrReturned string
+		var metadataBytes []byte
+
+		err = rows.Scan(
+			&result.Document.Id,
+			&result.Document.CollectionId,
+			&vectorStrReturned,
+			&metadataBytes,
+			&result.Document.Content,
+			&result.Document.CreatedAt,
+			&result.Document.UpdatedAt,
+			&result.Score,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan search result: %w", err)
+		}
+
+		// Parse vector string back to []float32
+		result.Document.Vector, err = stringToVector(vectorStrReturned)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+		}
+
+		// Parse metadata JSON back to map
+		if len(metadataBytes) > 0 {
+			err = json.Unmarshal(metadataBytes, &result.Document.Metadata)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+			}
+		}
+
+		results = append(results, result)
+	}
+
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating search results: %w", err)
+	}
+
+	return results, nil
+}
