@@ -22,8 +22,8 @@ This document tracks the detailed feature implementation status and future plans
 - Security basics (input validation, SQL injection prevention)
 
 **In Progress:**
-- Vector search functionality
 - Advanced document operations (upsert, batch operations)
+- Full-text search and hybrid search capabilities
 
 ---
 
@@ -48,19 +48,19 @@ This document tracks the detailed feature implementation status and future plans
   - [ ] Batch insert documents (multiple docs in one request)
   - [ ] Batch delete documents
 
-- [ ] **Vector Search**
-  - [ ] Cosine similarity search (brute-force)
-  - [ ] Top-K results with configurable K
-  - [ ] Metadata filtering (JSONB queries)
+- [x] **Vector Search**
+  - [x] Cosine similarity search (brute-force)
+  - [x] Top-K results with configurable K
+  - [x] Metadata filtering (JSONB queries)
   - [ ] Full-text search on content field
   - [ ] Hybrid search (vector + metadata + text combined)
-  - [ ] Return similarity scores with results
+  - [x] Return similarity scores with results
 
 ### API & Protocol
 - [ ] **gRPC API**
   - [x] Protocol Buffer definitions (v1)
   - [x] CollectionService implementation (4/4 methods complete: Create, Get, List, Delete)
-  - [x] DocumentService implementation (4/4 methods complete: CreateDocument, ListDocument, ListDocuments, DeleteDocument)
+  - [x] DocumentService implementation (5/5 methods complete: CreateDocument, ListDocument, ListDocuments, DeleteDocument, SearchDocuments)
   - [ ] HealthService implementation
   - [x] Comprehensive error handling with status codes
   - [x] Request validation and sanitization
