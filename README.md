@@ -1,10 +1,8 @@
 <p align="center"\>
-<img src="./assets/Logo.png" alt="VectorSync Logo" width="200" height="200"/\>
+<img src="./assets/Logo.png" alt="VectorSync Logo" width="200" height="300"/\>
 </p\>
 
-
 # VectorSync
-
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Version](https://img.shields.io/badge/Go-1.25.4+-00ADD8?logo=go)](https://golang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-316192?logo=postgresql)](https://www.postgresql.org/)
