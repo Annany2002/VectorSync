@@ -1,3 +1,8 @@
+<p align="center"\>
+<img src="./assets/Logo.png" alt="VectorSync Logo" width="200" height="200"/\>
+</p\>
+
+
 # VectorSync
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
