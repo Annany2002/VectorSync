@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package collections;
+package collection;
 
 option go_package = "github.com/Annany2002/vector-sync/api/proto/v1/generated";
 

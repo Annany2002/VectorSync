@@ -540,7 +540,8 @@ var File_collection_proto protoreflect.FileDescriptor
 
 const file_collection_proto_rawDesc = "" +
 	"\n" +
-	"\x10collection.proto\x12\vcollections\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\xaa\x03\n" +
+	"\x10collection.proto\x12\n" +
+	"collection\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\xa9\x03\n" +
 	"\n" +
 	"Collection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
@@ -549,46 +550,46 @@ const file_collection_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12)\n" +
-	"\x10vector_dimension\x18\x05 \x01(\x05R\x0fvectorDimension\x12T\n" +
-	"\x0fmetadata_schema\x18\x06 \x03(\v2+.collections.Collection.MetadataSchemaEntryR\x0emetadataSchema\x12%\n" +
+	"\x10vector_dimension\x18\x05 \x01(\x05R\x0fvectorDimension\x12S\n" +
+	"\x0fmetadata_schema\x18\x06 \x03(\v2*.collection.Collection.MetadataSchemaEntryR\x0emetadataSchema\x12%\n" +
 	"\x0edocument_count\x18\a \x01(\x03R\rdocumentCount\x1aZ\n" +
 	"\x13MetadataSchemaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
-	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\x97\x02\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\x96\x02\n" +
 	"\x17CreateCollectionRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12)\n" +
-	"\x10vector_dimension\x18\x02 \x01(\x05R\x0fvectorDimension\x12a\n" +
-	"\x0fmetadata_schema\x18\x03 \x03(\v28.collections.CreateCollectionRequest.MetadataSchemaEntryR\x0emetadataSchema\x1aZ\n" +
+	"\x10vector_dimension\x18\x02 \x01(\x05R\x0fvectorDimension\x12`\n" +
+	"\x0fmetadata_schema\x18\x03 \x03(\v27.collection.CreateCollectionRequest.MetadataSchemaEntryR\x0emetadataSchema\x1aZ\n" +
 	"\x13MetadataSchemaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
-	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"S\n" +
-	"\x18CreateCollectionResponse\x127\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"R\n" +
+	"\x18CreateCollectionResponse\x126\n" +
 	"\n" +
-	"collection\x18\x01 \x01(\v2\x17.collections.CollectionR\n" +
+	"collection\x18\x01 \x01(\v2\x16.collection.CollectionR\n" +
 	"collection\"'\n" +
 	"\x15ListCollectionRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"Q\n" +
-	"\x16ListCollectionResponse\x127\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
+	"\x16ListCollectionResponse\x126\n" +
 	"\n" +
-	"collection\x18\x01 \x01(\v2\x17.collections.CollectionR\n" +
+	"collection\x18\x01 \x01(\v2\x16.collection.CollectionR\n" +
 	"collection\"F\n" +
 	"\x16ListCollectionsRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x05R\x06offset\"T\n" +
-	"\x17ListCollectionsResponse\x129\n" +
-	"\vcollections\x18\x01 \x03(\v2\x17.collections.CollectionR\vcollections\")\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"S\n" +
+	"\x17ListCollectionsResponse\x128\n" +
+	"\vcollections\x18\x01 \x03(\v2\x16.collection.CollectionR\vcollections\")\n" +
 	"\x17DeleteCollectionRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x90\x01\n" +
 	"\x18DeleteCollectionResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\n" +
 	"deleted_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\x12)\n" +
-	"\x10document_deleted\x18\x03 \x01(\x03R\x0fdocumentDeleted2\x90\x04\n" +
-	"\x11CollectionService\x12\x7f\n" +
-	"\x10CreateCollection\x12$.collections.CreateCollectionRequest\x1a%.collections.CreateCollectionResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/collections\x12{\n" +
-	"\x0eListCollection\x12\".collections.ListCollectionRequest\x1a#.collections.ListCollectionResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/collections/{id}\x12y\n" +
-	"\x0fListCollections\x12#.collections.ListCollectionsRequest\x1a$.collections.ListCollectionsResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/collections\x12\x81\x01\n" +
-	"\x10DeleteCollection\x12$.collections.DeleteCollectionRequest\x1a%.collections.DeleteCollectionResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/v1/collections/{id}B:Z8github.com/Annany2002/vector-sync/api/proto/v1/generatedb\x06proto3"
+	"\x10document_deleted\x18\x03 \x01(\x03R\x0fdocumentDeleted2\x87\x04\n" +
+	"\x11CollectionService\x12}\n" +
+	"\x10CreateCollection\x12#.collection.CreateCollectionRequest\x1a$.collection.CreateCollectionResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/collections\x12y\n" +
+	"\x0eListCollection\x12!.collection.ListCollectionRequest\x1a\".collection.ListCollectionResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/collections/{id}\x12w\n" +
+	"\x0fListCollections\x12\".collection.ListCollectionsRequest\x1a#.collection.ListCollectionsResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/collections\x12\x7f\n" +
+	"\x10DeleteCollection\x12#.collection.DeleteCollectionRequest\x1a$.collection.DeleteCollectionResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/v1/collections/{id}B:Z8github.com/Annany2002/vector-sync/api/proto/v1/generatedb\x06proto3"
 
 var (
 	file_collection_proto_rawDescOnce sync.Once
@@ -604,39 +605,39 @@ func file_collection_proto_rawDescGZIP() []byte {
 
 var file_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_collection_proto_goTypes = []any{
-	(*Collection)(nil),               // 0: collections.Collection
-	(*CreateCollectionRequest)(nil),  // 1: collections.CreateCollectionRequest
-	(*CreateCollectionResponse)(nil), // 2: collections.CreateCollectionResponse
-	(*ListCollectionRequest)(nil),    // 3: collections.ListCollectionRequest
-	(*ListCollectionResponse)(nil),   // 4: collections.ListCollectionResponse
-	(*ListCollectionsRequest)(nil),   // 5: collections.ListCollectionsRequest
-	(*ListCollectionsResponse)(nil),  // 6: collections.ListCollectionsResponse
-	(*DeleteCollectionRequest)(nil),  // 7: collections.DeleteCollectionRequest
-	(*DeleteCollectionResponse)(nil), // 8: collections.DeleteCollectionResponse
-	nil,                              // 9: collections.Collection.MetadataSchemaEntry
-	nil,                              // 10: collections.CreateCollectionRequest.MetadataSchemaEntry
+	(*Collection)(nil),               // 0: collection.Collection
+	(*CreateCollectionRequest)(nil),  // 1: collection.CreateCollectionRequest
+	(*CreateCollectionResponse)(nil), // 2: collection.CreateCollectionResponse
+	(*ListCollectionRequest)(nil),    // 3: collection.ListCollectionRequest
+	(*ListCollectionResponse)(nil),   // 4: collection.ListCollectionResponse
+	(*ListCollectionsRequest)(nil),   // 5: collection.ListCollectionsRequest
+	(*ListCollectionsResponse)(nil),  // 6: collection.ListCollectionsResponse
+	(*DeleteCollectionRequest)(nil),  // 7: collection.DeleteCollectionRequest
+	(*DeleteCollectionResponse)(nil), // 8: collection.DeleteCollectionResponse
+	nil,                              // 9: collection.Collection.MetadataSchemaEntry
+	nil,                              // 10: collection.CreateCollectionRequest.MetadataSchemaEntry
 	(*timestamppb.Timestamp)(nil),    // 11: google.protobuf.Timestamp
 	(*structpb.Struct)(nil),          // 12: google.protobuf.Struct
 }
 var file_collection_proto_depIdxs = []int32{
-	11, // 0: collections.Collection.created_at:type_name -> google.protobuf.Timestamp
-	11, // 1: collections.Collection.updated_at:type_name -> google.protobuf.Timestamp
-	9,  // 2: collections.Collection.metadata_schema:type_name -> collections.Collection.MetadataSchemaEntry
-	10, // 3: collections.CreateCollectionRequest.metadata_schema:type_name -> collections.CreateCollectionRequest.MetadataSchemaEntry
-	0,  // 4: collections.CreateCollectionResponse.collection:type_name -> collections.Collection
-	0,  // 5: collections.ListCollectionResponse.collection:type_name -> collections.Collection
-	0,  // 6: collections.ListCollectionsResponse.collections:type_name -> collections.Collection
-	11, // 7: collections.DeleteCollectionResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	12, // 8: collections.Collection.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
-	12, // 9: collections.CreateCollectionRequest.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
-	1,  // 10: collections.CollectionService.CreateCollection:input_type -> collections.CreateCollectionRequest
-	3,  // 11: collections.CollectionService.ListCollection:input_type -> collections.ListCollectionRequest
-	5,  // 12: collections.CollectionService.ListCollections:input_type -> collections.ListCollectionsRequest
-	7,  // 13: collections.CollectionService.DeleteCollection:input_type -> collections.DeleteCollectionRequest
-	2,  // 14: collections.CollectionService.CreateCollection:output_type -> collections.CreateCollectionResponse
-	4,  // 15: collections.CollectionService.ListCollection:output_type -> collections.ListCollectionResponse
-	6,  // 16: collections.CollectionService.ListCollections:output_type -> collections.ListCollectionsResponse
-	8,  // 17: collections.CollectionService.DeleteCollection:output_type -> collections.DeleteCollectionResponse
+	11, // 0: collection.Collection.created_at:type_name -> google.protobuf.Timestamp
+	11, // 1: collection.Collection.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 2: collection.Collection.metadata_schema:type_name -> collection.Collection.MetadataSchemaEntry
+	10, // 3: collection.CreateCollectionRequest.metadata_schema:type_name -> collection.CreateCollectionRequest.MetadataSchemaEntry
+	0,  // 4: collection.CreateCollectionResponse.collection:type_name -> collection.Collection
+	0,  // 5: collection.ListCollectionResponse.collection:type_name -> collection.Collection
+	0,  // 6: collection.ListCollectionsResponse.collections:type_name -> collection.Collection
+	11, // 7: collection.DeleteCollectionResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	12, // 8: collection.Collection.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
+	12, // 9: collection.CreateCollectionRequest.MetadataSchemaEntry.value:type_name -> google.protobuf.Struct
+	1,  // 10: collection.CollectionService.CreateCollection:input_type -> collection.CreateCollectionRequest
+	3,  // 11: collection.CollectionService.ListCollection:input_type -> collection.ListCollectionRequest
+	5,  // 12: collection.CollectionService.ListCollections:input_type -> collection.ListCollectionsRequest
+	7,  // 13: collection.CollectionService.DeleteCollection:input_type -> collection.DeleteCollectionRequest
+	2,  // 14: collection.CollectionService.CreateCollection:output_type -> collection.CreateCollectionResponse
+	4,  // 15: collection.CollectionService.ListCollection:output_type -> collection.ListCollectionResponse
+	6,  // 16: collection.CollectionService.ListCollections:output_type -> collection.ListCollectionsResponse
+	8,  // 17: collection.CollectionService.DeleteCollection:output_type -> collection.DeleteCollectionResponse
 	14, // [14:18] is the sub-list for method output_type
 	10, // [10:14] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
