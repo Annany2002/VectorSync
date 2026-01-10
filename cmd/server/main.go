@@ -1,17 +1,22 @@
 package main
 
 import (
-	"net"
+	"context"
+	"net"      // for grpc server
+	"net/http" // for http gateway
 
-	pb "github.com/Annany2002/vector-sync/api/proto/v1"
+	pb "github.com/Annany2002/vector-sync/api/proto/v1/generated"
 	"github.com/Annany2002/vector-sync/internal/db"
 	grpcHandler "github.com/Annany2002/vector-sync/internal/grpc"
 	"github.com/Annany2002/vector-sync/internal/logger"
 	"github.com/Annany2002/vector-sync/internal/services"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
+// Initialze the logger
 var (
 	log = logger.NewLogger()
 )
@@ -55,10 +60,44 @@ func main() {
 		return
 	}
 
-	log.Infof("VectorSync gRPC server started on :6309")
+	// Create the grpc gateway within a go-routine
+	go func() {
+		// Start serving gRPC requests
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Errorf("Failed to serve gRPC: %v", err)
+		}
+	}()
 
-	// Start serving gRPC requests
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Errorf("Failed to serve gRPC: %v", err)
+	// Create HTTP gateway mux
+	mux := runtime.NewServeMux()
+
+	// Register CollectionService gateway handler
+	err = pb.RegisterCollectionServiceHandlerFromEndpoint(
+		context.Background(),
+		mux,
+		"localhost:6309",
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
+	if err != nil {
+		log.Fatalf("Failed to register collection gateway: %v", err)
+	}
+
+	// Register DocumentService gateway handler
+	err = pb.RegisterDocumentServiceHandlerFromEndpoint(
+		context.Background(),
+		mux,
+		"localhost:6309",
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
+	if err != nil {
+		log.Fatalf("Failed to register document gateway: %v", err)
+	}
+
+	log.Infof("VectorSync gRPC server started on :6309")
+	log.Infof("VectorSync HTTP gateway started on :8080")
+
+	// Start HTTP server (blocks on main thread)
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatalf("Failed to serve HTTP gateway: %v", err)
 	}
 }
