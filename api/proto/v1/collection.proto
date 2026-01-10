@@ -2,10 +2,13 @@ syntax = "proto3";
 
 package collections;
 
-option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
+option go_package = "github.com/Annany2002/vector-sync/api/proto/v1/generated";
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+// importing annotations for grpc-gateway
+import "google/api/annotations.proto";
+
 
 // Collections represents a collection of documents
 message Collection {
@@ -85,8 +88,25 @@ message DeleteCollectionResponse {
 
 // CollectionService provides collection management operations
 service CollectionService {
-    rpc CreateCollection (CreateCollectionRequest) returns (CreateCollectionResponse);
-    rpc ListCollection (ListCollectionRequest) returns (ListCollectionResponse);
-    rpc ListCollections (ListCollectionsRequest) returns (ListCollectionsResponse);
-    rpc DeleteCollection (DeleteCollectionRequest) returns (DeleteCollectionResponse);
+    rpc CreateCollection (CreateCollectionRequest) returns (CreateCollectionResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/collections"
+            body: "*"
+        };
+    };
+    rpc ListCollection (ListCollectionRequest) returns (ListCollectionResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/collections/{id}"
+        };
+    };
+    rpc ListCollections (ListCollectionsRequest) returns (ListCollectionsResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/collections"
+        };
+    };
+    rpc DeleteCollection (DeleteCollectionRequest) returns (DeleteCollectionResponse) {
+        option (google.api.http) = {
+            delete: "/api/v1/collections/{id}"
+        };
+    };
 }

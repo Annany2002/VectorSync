@@ -58,10 +58,17 @@ docker-up:
 docker-down:
 	docker compose down
 
-# Generate protobuf code
+# Generate protobuf code along with grpc gateway
 proto:
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	@mkdir -p api/proto/v1/generated
+	@protoc -I api/proto/v1 \
+		-I api/proto/third_party \
+		--go_out=api/proto/v1/generated \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=api/proto/v1/generated \
+		--go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=api/proto/v1/generated \
+		--grpc-gateway_opt=paths=source_relative \
 		api/proto/v1/*.proto
 
 # Run database migrations

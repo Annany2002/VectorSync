@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package document;
 
-option go_package = "github.com/Annany2002/vector-sync/api/proto/v1";
+option go_package = "github.com/Annany2002/vector-sync/api/proto/v1/generated";
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+// importing annotations for grpc-gateway
+import "google/api/annotations.proto";
 
 // Document represents a document in a collection
 message Document {
@@ -117,9 +119,31 @@ message SearchDocumentResponse {
 
 // DocumentService provides document management operations
 service DocumentService {
-    rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse);
-    rpc ListDocument (ListDocumentRequest) returns (ListDocumentResponse);
-    rpc ListDocuments (ListDocumentsRequest) returns (ListDocumentsResponse);
-    rpc DeleteDocument (DeleteDocumentRequest) returns (DeleteDocumentResponse);
-    rpc SearchDocuments (SearchDocumentRequest) returns (SearchDocumentResponse);
+    rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents"
+            body : "*"
+        };
+    };
+    rpc ListDocument (ListDocumentRequest) returns (ListDocumentResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/documents/{id}"
+        };
+    };
+    rpc ListDocuments (ListDocumentsRequest) returns (ListDocumentsResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/documents" // due to path conflict with ListDocument, the collection_id will be in query params
+        };
+    };
+    rpc DeleteDocument (DeleteDocumentRequest) returns (DeleteDocumentResponse) {
+        option (google.api.http) = {
+            delete: "/api/v1/documents/{id}"
+        };
+    };
+    rpc SearchDocuments (SearchDocumentRequest) returns (SearchDocumentResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents/search"
+            body: "*"
+        };
+    };
 }
