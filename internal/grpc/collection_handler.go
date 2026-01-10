@@ -6,7 +6,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/Annany2002/vector-sync/api/proto/v1"
+	pb "github.com/Annany2002/vector-sync/api/proto/v1/generated"
 	"github.com/Annany2002/vector-sync/internal/models"
 	"github.com/Annany2002/vector-sync/internal/services"
 )
