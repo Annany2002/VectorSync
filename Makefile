@@ -25,10 +25,10 @@ dev:
 test:
 	go test -v ./...
 
-# Format code with goimports
+# Format code with goimports (excluding generated files)
 format:
 	@echo "Formatting code..."
-	goimports -w .
+	@find . -name '*.go' -not -path './api/proto/v1/generated/*' -not -path './vendor/*' | xargs goimports -w
 	@echo "Done!"
 
 # Run golangci-lint

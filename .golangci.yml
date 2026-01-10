@@ -34,6 +34,16 @@ issues:
       linters:
         - errcheck
         - dupl
+    # Exclude all linters from generated protobuf files
+    - path: \.pb\.go$
+      linters:
+        - all
+    - path: _grpc\.pb\.go$
+      linters:
+        - all
+    - path: \.pb\.gw\.go$
+      linters:
+        - all
 
 run:
   timeout: 5m
@@ -42,6 +52,7 @@ run:
     - bin
     - vendor
     - .git
+    - api/proto/v1/generated  # Skip generated protobuf code
 
 output:
   format: colored-line-number
