@@ -117,29 +117,47 @@ go run cmd/server/main.go
 
 ### Usage Example
 
+VectorSync supports both gRPC and HTTP/JSON APIs running on separate ports.
+
+#### Quick Start with HTTP/JSON
+
+```bash
+# 1. Create a collection
+curl -X POST http://localhost:8080/api/v1/collections \
+  -H "Content-Type: application/json" \
+  -d '{"name": "embeddings", "vector_dimension": 768}'
+
+# 2. Insert a document
+curl -X POST http://localhost:8080/api/v1/documents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "your-collection-id",
+    "vector": [0.1, 0.2, 0.3],
+    "metadata": {"category": "tech"},
+    "content": "Sample document"
+  }'
+
+# 3. Search for similar vectors
+curl -X POST http://localhost:8080/api/v1/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "your-collection-id",
+    "query_vector": [0.1, 0.2, 0.3],
+    "top_k": 10
+  }'
+```
+
+#### Quick Start with gRPC
+
 ```bash
 # Create a collection
 grpcurl -plaintext -d '{
   "name": "embeddings",
   "vector_dimension": 768
-}' localhost:6309 vectorsync.CollectionService/CreateCollection
-
-# Insert a document
-grpcurl -plaintext -d '{
-  "collection_id": "uuid-here",
-  "vector": [0.1, 0.2, ...],
-  "metadata": {"category": "tech", "author": "john"},
-  "content": "Sample document text"
-}' localhost:6309 vectorsync.DocumentService/InsertDocument
-
-# Search for similar vectors
-grpcurl -plaintext -d '{
-  "collection_id": "uuid-here",
-  "query_vector": [0.1, 0.2, ...],
-  "top_k": 10,
-  "metadata_filter": {"category": "tech"}
-}' localhost:6309 vectorsync.DocumentService/SearchDocuments
+}' localhost:6309 collection.CollectionService/CreateCollection
 ```
+
+**📚 For comprehensive examples, see [API Examples Documentation](./docs/API_EXAMPLES.md)**
 
 ---
 
@@ -148,14 +166,33 @@ grpcurl -plaintext -d '{
 VectorSync provides two API interfaces:
 
 ### gRPC API
+- **Port:** `localhost:6309`
 - **CollectionService** - Create, retrieve, list, and delete collections
-- **DocumentService** - Insert, upsert, retrieve, delete, and search documents
-- **HealthService** - Liveness and readiness probes
+- **DocumentService** - Insert, retrieve, list, delete, and search documents
+- **HealthService** - Liveness and readiness probes (coming soon)
 
 ### HTTP/JSON API
-All gRPC endpoints are automatically exposed via grpc-gateway at `http://localhost:8080/v1/*`
+- **Port:** `localhost:8080`
+- **Base Path:** `/api/v1`
+- All gRPC endpoints are automatically exposed via grpc-gateway
+- RESTful URL structure following industry best practices
+- Full support for JSON request/response payloads
 
-See [API Reference](./docs/API.md) for detailed endpoint documentation.
+**Available Endpoints:**
+```
+POST   /api/v1/collections              # Create collection
+GET    /api/v1/collections              # List collections
+GET    /api/v1/collections/{id}         # Get collection
+DELETE /api/v1/collections/{id}         # Delete collection
+
+POST   /api/v1/documents                # Create document
+GET    /api/v1/documents                # List documents
+GET    /api/v1/documents/{id}           # Get document
+DELETE /api/v1/documents/{id}           # Delete document
+POST   /api/v1/documents/search         # Search similar vectors
+```
+
+**📚 Detailed Usage:** [API Examples](./docs/API_EXAMPLES.md) | API Reference (coming soon)
 
 ---
 

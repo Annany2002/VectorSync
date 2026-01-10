@@ -11,12 +11,15 @@ This document tracks the detailed feature implementation status and future plans
 **Completed:**
 - Collection CRUD (Create, Get, List, Delete) - 4/4 methods
 - Document CRUD (Create, Get, List, Delete) - 4/4 methods
+- Vector search with cosine similarity
 - Database schema & migrations (Collections + Documents tables)
 - Document count tracking with database triggers
 - Repository pattern with JSONB and pgvector handling
 - Service layer with validation & business logic
 - Pagination support for list operations
-- gRPC server with reflection
+- gRPC server with reflection (port 6309)
+- HTTP/JSON REST API via grpc-gateway (port 8080)
+- RESTful endpoint mapping at /api/v1/*
 - Logging infrastructure
 - Configuration management
 - Security basics (input validation, SQL injection prevention)
@@ -66,8 +69,8 @@ This document tracks the detailed feature implementation status and future plans
   - [x] Request validation and sanitization
 
 - [ ] **HTTP/JSON API**
-  - [ ] grpc-gateway integration
-  - [ ] RESTful endpoint mapping
+  - [x] grpc-gateway integration
+  - [x] RESTful endpoint mapping (all endpoints at /api/v1/*)
   - [ ] OpenAPI/Swagger documentation generation
   - [ ] CORS configuration
 
