@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package health;
+
+option go_package = "github.com/Annany2002/vector-sync/api/proto/v1/generated";
+
+import "google/api/annotations.proto";
+
+// HealthCheckRequest is the request for health check
+message HealthCheckRequest {
+    // service name to check health for
+    // empty string "" = liveness check (is process alive?)
+    // "readiness" = readiness check (can serve traffic?)
+    string service = 1;
+}
+
+// ServingStatus defines the health status
+enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+}
+
+// HealthCheckResponse is the response for health check
+message HealthCheckResponse {
+    ServingStatus status = 1;
+}
+
+// HealthService provides health check endpoints
+service HealthService {
+    // Check performs a health check
+    rpc Check (HealthCheckRequest) returns (HealthCheckResponse) {
+        option (google.api.http) = {
+            get: "/health/live"
+            additional_bindings {
+                get: "/health/ready"
+            }
+        };
+    };
+}
