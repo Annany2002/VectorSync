@@ -7,6 +7,7 @@ This document provides comprehensive examples for using VectorSync's APIs, inclu
 ## Table of Contents
 
 - [Quick Reference](#quick-reference)
+- [Health Checks](#health-checks)
 - [Collection Operations](#collection-operations)
 - [Document Operations](#document-operations)
 - [Search Operations](#search-operations)
@@ -40,6 +41,108 @@ GET    /api/v1/documents                # List documents
 GET    /api/v1/documents/{id}           # Get document
 DELETE /api/v1/documents/{id}           # Delete document
 POST   /api/v1/documents/search         # Search similar vectors
+```
+
+---
+
+## Health Checks
+
+VectorSync provides Kubernetes-compatible health check endpoints for monitoring service health and readiness.
+
+### Liveness Check
+
+**Purpose:** Verify the process is alive and can respond to requests.
+
+#### HTTP
+
+```bash
+curl http://localhost:8080/health/live
+```
+
+**Response:**
+```json
+{
+  "status": "SERVING"
+}
+```
+
+#### gRPC
+
+```bash
+grpcurl -plaintext -d '{"service": ""}' localhost:6309 health.HealthService/Check
+```
+
+**Response:**
+```json
+{
+  "status": "SERVING"
+}
+```
+
+---
+
+### Readiness Check
+
+**Purpose:** Verify the service is ready to serve traffic (database connected).
+
+#### HTTP
+
+```bash
+curl http://localhost:8080/health/ready
+```
+
+**Response (Ready):**
+```json
+{
+  "status": "SERVING"
+}
+```
+
+**Response (Not Ready - database down):**
+```json
+{
+  "status": "NOT_SERVING"
+}
+```
+
+#### gRPC
+
+```bash
+grpcurl -plaintext -d '{"service": "readiness"}' localhost:6309 health.HealthService/Check
+```
+
+---
+
+### Kubernetes Integration
+
+**Example pod configuration:**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vectorsync
+spec:
+  containers:
+  - name: vectorsync
+    image: vectorsync:latest
+    ports:
+    - containerPort: 6309
+      name: grpc
+    - containerPort: 8080
+      name: http
+    livenessProbe:
+      httpGet:
+        path: /health/live
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /health/ready
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
 ```
 
 ---

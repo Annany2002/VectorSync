@@ -225,8 +225,30 @@ See [Configuration Guide](./docs/CONFIGURATION.md) for all options.
 ## Observability
 
 ### Health Endpoints
-- `GET /health/live` - Liveness probe (is the service running?)
-- `GET /health/ready` - Readiness probe (can it serve traffic?)
+
+VectorSync provides Kubernetes-compatible health check endpoints:
+
+- **`GET /health/live`** - Liveness probe
+  - Returns 200 OK if the process is alive and can respond to requests
+  - Should always return 200 as long as the server is running
+  - Use for container restart policies (Kubernetes liveness probe)
+
+- **`GET /health/ready`** - Readiness probe  
+  - Returns 200 OK if the service is ready to serve traffic
+  - Verifies database connectivity via ping
+  - Returns 503 Service Unavailable if database is unreachable
+  - Use for load balancer routing decisions (Kubernetes readiness probe)
+
+**Example:**
+```bash
+# Check if server is alive
+curl http://localhost:8080/health/live
+# Response: {"status":"SERVING"}
+
+# Check if server is ready
+curl http://localhost:8080/health/ready
+# Response: {"status":"SERVING"} (or {"status":"NOT_SERVING"} if DB is down)
+```
 
 ### Metrics
 Prometheus-compatible metrics available at `/metrics`:

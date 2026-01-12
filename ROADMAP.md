@@ -64,7 +64,7 @@ This document tracks the detailed feature implementation status and future plans
   - [x] Protocol Buffer definitions (v1)
   - [x] CollectionService implementation (4/4 methods complete: Create, Get, List, Delete)
   - [x] DocumentService implementation (5/5 methods complete: CreateDocument, ListDocument, ListDocuments, DeleteDocument, SearchDocuments)
-  - [ ] HealthService implementation
+  - [x] HealthService implementation
   - [x] Comprehensive error handling with status codes
   - [x] Request validation and sanitization
 
@@ -130,10 +130,10 @@ This document tracks the detailed feature implementation status and future plans
   - [ ] Error rate tracking
   - [ ] Active collections and documents count
 
-- [ ] **Health Checks**
-  - [ ] Liveness probe (is process running?)
-  - [ ] Readiness probe (can serve traffic?)
-  - [ ] Database connectivity check
+- [x] **Health Checks**
+  - [x] Liveness probe (is process running?)
+  - [x] Readiness probe (can serve traffic?)
+  - [x] Database connectivity check
   - [ ] Memory index status check
 
 - [ ] **Operational Features**
