@@ -38,10 +38,12 @@ func main() {
 	// Create service layer (business logic)
 	collectionService := services.NewCollectionService(*collectionRepo)
 	documentService := services.NewDocumentService(*documentRepo, *collectionRepo)
+	healthService := services.NewHealthService(dbConn)
 
 	// Create handler layer (handles gRPC requests)
 	collectionHandler := grpcHandler.NewCollectionHandler(collectionService)
 	documentHandler := grpcHandler.NewDocumentHandler(documentService, collectionService)
+	healthHandler := grpcHandler.NewHealthHandler(healthService)
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
@@ -49,6 +51,7 @@ func main() {
 	// Register our services with the gRPC server
 	pb.RegisterCollectionServiceServer(grpcServer, collectionHandler)
 	pb.RegisterDocumentServiceServer(grpcServer, documentHandler)
+	pb.RegisterHealthServiceServer(grpcServer, healthHandler)
 
 	// Enable gRPC reflection for grpcurl
 	reflection.Register(grpcServer)
@@ -91,6 +94,17 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalf("Failed to register document gateway: %v", err)
+	}
+
+	// Register HealthService gateway handler
+	err = pb.RegisterHealthServiceHandlerFromEndpoint(
+		context.Background(),
+		mux,
+		"localhost:6309",
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
+	if err != nil {
+		log.Fatalf("Failed to register health gateway: %v", err)
 	}
 
 	log.Infof("VectorSync gRPC server started on :6309")
