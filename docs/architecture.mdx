@@ -1,0 +1,146 @@
+---
+title: Architecture
+description: 'Understanding VectorSync system design'
+---
+
+## System Overview
+
+VectorSync is built with a layered architecture that separates concerns and enables clean, maintainable code.
+
+## Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Client Layer                        │
+│         (gRPC Clients, HTTP/REST Clients)               │
+└─────────────┬───────────────────────┬───────────────────┘
+              │                       │
+         gRPC │                  HTTP │
+              │                       │
+┌─────────────▼───────────────────────▼───────────────────┐
+│                    Transport Layer                       │
+│  ┌─────────────────┐     ┌─────────────────────────┐    │
+│  │   gRPC Server   │     │  grpc-gateway (HTTP)    │    │
+│  │   Port: 6309    │     │      Port: 8080         │    │
+│  └────────┬────────┘     └───────────┬─────────────┘    │
+└───────────┼──────────────────────────┼──────────────────┘
+            │                          │
+            ▼                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    Handler Layer                         │
+│  ┌────────────────┐ ┌────────────────┐ ┌──────────────┐ │
+│  │ Collection     │ │ Document       │ │ Health       │ │
+│  │ Handler        │ │ Handler        │ │ Handler      │ │
+│  └───────┬────────┘ └───────┬────────┘ └──────┬───────┘ │
+└──────────┼──────────────────┼─────────────────┼─────────┘
+           │                  │                 │
+           ▼                  ▼                 ▼
+┌─────────────────────────────────────────────────────────┐
+│                    Service Layer                         │
+│  ┌────────────────┐ ┌────────────────┐ ┌──────────────┐ │
+│  │ Collection     │ │ Document       │ │ Health       │ │
+│  │ Service        │ │ Service        │ │ Service      │ │
+│  └───────┬────────┘ └───────┬────────┘ └──────┬───────┘ │
+└──────────┼──────────────────┼─────────────────┼─────────┘
+           │                  │                 │
+           ▼                  ▼                 ▼
+┌─────────────────────────────────────────────────────────┐
+│                   Repository Layer                       │
+│  ┌────────────────┐ ┌────────────────┐                  │
+│  │ Collection     │ │ Document       │                  │
+│  │ Repo           │ │ Repo           │                  │
+│  └───────┬────────┘ └───────┬────────┘                  │
+└──────────┼──────────────────┼───────────────────────────┘
+           │                  │
+           ▼                  ▼
+┌─────────────────────────────────────────────────────────┐
+│                   Database Layer                         │
+│           PostgreSQL + pgvector Extension                │
+│  ┌────────────────┐ ┌────────────────┐                  │
+│  │ collections    │ │ documents      │                  │
+│  │ table          │ │ table          │                  │
+│  └────────────────┘ └────────────────┘                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Layer Responsibilities
+
+### Transport Layer
+
+| Component | Responsibility |
+|-----------|---------------|
+| gRPC Server | Native gRPC protocol on port 6309 |
+| grpc-gateway | HTTP/JSON translation on port 8080 |
+
+### Handler Layer
+
+Handles protocol-specific request/response translation:
+- Extracts data from gRPC/HTTP requests
+- Calls appropriate service methods
+- Converts responses to protocol format
+
+### Service Layer
+
+Contains business logic:
+- Input validation
+- Vector dimension checking
+- Error handling
+- Orchestrating repository calls
+
+### Repository Layer
+
+Database operations:
+- SQL query execution
+- Data mapping (Go structs ↔ SQL)
+- Vector format conversion
+- JSONB handling for metadata
+
+## Key Design Decisions
+
+<AccordionGroup>
+  <Accordion title="DB-First Writes">
+    All writes persist to PostgreSQL first, ensuring durability. The database is the source of truth.
+  </Accordion>
+  <Accordion title="pgvector Integration">
+    Uses PostgreSQL's pgvector extension for native vector operations and cosine similarity calculations.
+  </Accordion>
+  <Accordion title="JSONB Metadata">
+    Flexible metadata storage with GIN indexing for efficient filtering queries.
+  </Accordion>
+  <Accordion title="Atomic Upserts">
+    Uses PostgreSQL `ON CONFLICT` for race-condition-free insert-or-update operations.
+  </Accordion>
+  <Accordion title="Graceful Shutdown">
+    Proper signal handling (SIGINT, SIGTERM) with ordered shutdown of HTTP, gRPC, and database connections.
+  </Accordion>
+</AccordionGroup>
+
+## Database Schema
+
+### Collections Table
+
+```sql
+CREATE TABLE collections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    vector_dim INTEGER NOT NULL,
+    metadata_schema JSONB DEFAULT '{}',
+    document_count BIGINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Documents Table
+
+```sql
+CREATE TABLE documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
+    vector VECTOR,
+    metadata JSONB DEFAULT '{}',
+    content TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```

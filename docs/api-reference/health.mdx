@@ -1,0 +1,131 @@
+---
+title: Health Checks
+description: 'Liveness and readiness probe endpoints'
+---
+
+VectorSync provides Kubernetes-compatible health check endpoints for monitoring service health.
+
+## Liveness Probe
+
+Check if the server process is alive and can respond to requests.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl http://localhost:8080/health/live
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{"service": ""}' \
+      localhost:6309 health.HealthService/Check
+    ```
+  </Tab>
+</Tabs>
+
+### Response
+
+```json
+{
+  "status": "SERVING"
+}
+```
+
+<Info>
+The liveness probe should **always** return 200 OK as long as the server process is running. Use this for container restart policies.
+</Info>
+
+---
+
+## Readiness Probe
+
+Check if the service is ready to serve traffic (database connected).
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl http://localhost:8080/health/ready
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{"service": "readiness"}' \
+      localhost:6309 health.HealthService/Check
+    ```
+  </Tab>
+</Tabs>
+
+### Response (Ready)
+
+```json
+{
+  "status": "SERVING"
+}
+```
+
+### Response (Not Ready)
+
+```json
+{
+  "status": "NOT_SERVING"
+}
+```
+
+<Warning>
+The readiness probe returns `NOT_SERVING` when the database is unreachable. Use this for load balancer routing decisions.
+</Warning>
+
+---
+
+## Status Values
+
+| Status | Description |
+|--------|-------------|
+| `SERVING` | Service is healthy and ready |
+| `NOT_SERVING` | Service is unhealthy (e.g., DB down) |
+| `UNKNOWN` | Health status cannot be determined |
+
+---
+
+## Kubernetes Integration
+
+Example pod configuration with health probes:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vectorsync
+spec:
+  containers:
+  - name: vectorsync
+    image: vectorsync:latest
+    ports:
+    - containerPort: 6309
+      name: grpc
+    - containerPort: 8080
+      name: http
+    livenessProbe:
+      httpGet:
+        path: /health/live
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /health/ready
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      failureThreshold: 1
+```
+
+### Probe Configuration Tips
+
+| Probe | Setting | Recommendation |
+|-------|---------|----------------|
+| Liveness | `periodSeconds` | 10-30 seconds |
+| Liveness | `failureThreshold` | 3 (allow temporary issues) |
+| Readiness | `periodSeconds` | 5-10 seconds |
+| Readiness | `failureThreshold` | 1 (remove from LB quickly) |

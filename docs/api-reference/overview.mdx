@@ -1,0 +1,76 @@
+---
+title: API Overview
+description: 'VectorSync API reference'
+---
+
+## Server Endpoints
+
+| Protocol | Port | Description |
+|----------|------|-------------|
+| gRPC | 6309 | Native gRPC API |
+| HTTP | 8080 | REST API via grpc-gateway |
+
+## Base URL
+
+```
+HTTP: http://localhost:8080/api/v1
+gRPC: localhost:6309
+```
+
+## Available Services
+
+### gRPC Services
+
+| Service | Description |
+|---------|-------------|
+| `collection.CollectionService` | Collection management |
+| `document.DocumentService` | Document operations |
+| `health.HealthService` | Health checks |
+
+### HTTP Endpoints
+
+```
+# Collections
+POST   /api/v1/collections              Create collection
+GET    /api/v1/collections              List collections
+GET    /api/v1/collections/{id}         Get collection
+DELETE /api/v1/collections/{id}         Delete collection
+
+# Documents
+POST   /api/v1/documents                Create document
+PUT    /api/v1/documents/{id}           Upsert document
+GET    /api/v1/documents                List documents
+GET    /api/v1/documents/{id}           Get document
+DELETE /api/v1/documents/{id}           Delete document
+POST   /api/v1/documents/search         Search documents
+
+# Health
+GET    /health/live                     Liveness probe
+GET    /health/ready                    Readiness probe
+```
+
+## Authentication
+
+<Warning>
+Authentication is not yet implemented in v0.1.0-alpha. All endpoints are currently open.
+</Warning>
+
+## Error Responses
+
+All errors follow a consistent format:
+
+```json
+{
+  "code": 3,
+  "message": "error description",
+  "details": []
+}
+```
+
+### Common Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| 3 | INVALID_ARGUMENT | Invalid request parameters |
+| 5 | NOT_FOUND | Resource not found |
+| 13 | INTERNAL | Internal server error |

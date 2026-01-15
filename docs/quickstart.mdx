@@ -1,0 +1,142 @@
+---
+title: Quickstart
+description: 'Get VectorSync running in 5 minutes'
+---
+
+## Prerequisites
+
+- Go 1.25.4+
+- PostgreSQL 12+ with pgvector extension
+- Docker & Docker Compose (optional)
+
+## Installation
+
+<Tabs>
+  <Tab title="Docker Compose (Recommended)">
+    ```bash
+    # Clone the repository
+    git clone https://github.com/Annany2002/vector-sync.git
+    cd vector-sync
+
+    # Start the stack
+    docker-compose up -d
+
+    # VectorSync will be available at:
+    # - gRPC: localhost:6309
+    # - HTTP: localhost:8080
+    ```
+  </Tab>
+  <Tab title="Manual Setup">
+    ```bash
+    # Install dependencies
+    go mod download
+
+    # Set up environment
+    cp .env.example .env
+    # Edit .env with your PostgreSQL connection string
+
+    # Run migrations
+    psql $DB_URL -f migrations/001_enable_pgvector.up.sql
+    psql $DB_URL -f migrations/002_create_collections.up.sql
+    psql $DB_URL -f migrations/003_create_documents.up.sql
+
+    # Start the server
+    go run cmd/vector-sync/main.go
+    ```
+  </Tab>
+</Tabs>
+
+## Your First Collection
+
+### 1. Create a Collection
+
+```bash
+curl -X POST http://localhost:8080/api/v1/collections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my_embeddings",
+    "vector_dimension": 3
+  }'
+```
+
+<Accordion title="Response">
+```json
+{
+  "collection": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "my_embeddings",
+    "vectorDimension": 3,
+    "documentCount": "0"
+  }
+}
+```
+</Accordion>
+
+### 2. Insert a Document
+
+```bash
+curl -X POST http://localhost:8080/api/v1/documents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "YOUR_COLLECTION_ID",
+    "vector": [0.1, 0.2, 0.3],
+    "content": "My first document",
+    "metadata": {
+      "category": {"value": "example"}
+    }
+  }'
+```
+
+### 3. Search for Similar Vectors
+
+```bash
+curl -X POST http://localhost:8080/api/v1/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "YOUR_COLLECTION_ID",
+    "query_vector": [0.1, 0.2, 0.3],
+    "top_k": 10
+  }'
+```
+
+<Accordion title="Response">
+```json
+{
+  "results": [
+    {
+      "document": {
+        "id": "...",
+        "content": "My first document",
+        "metadata": {"category": {"value": "example"}}
+      },
+      "score": 1.0
+    }
+  ]
+}
+```
+</Accordion>
+
+## Server Endpoints
+
+| Protocol | Port | Description |
+|----------|------|-------------|
+| gRPC | 6309 | Native gRPC API |
+| HTTP | 8080 | REST API via grpc-gateway |
+
+## Health Checks
+
+Verify your server is running:
+
+```bash
+# Liveness check
+curl http://localhost:8080/health/live
+
+# Readiness check
+curl http://localhost:8080/health/ready
+```
+
+## Next Steps
+
+- Explore the [API Reference](/api-reference/overview) for complete endpoint documentation
+- Learn about [Configuration](/configuration) options
+- Check the [Roadmap](/roadmap) for upcoming features

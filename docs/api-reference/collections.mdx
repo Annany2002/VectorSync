@@ -1,0 +1,154 @@
+---
+title: Collections
+description: 'Collection management endpoints'
+---
+
+## Create Collection
+
+Create a new vector collection with a fixed dimension.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X POST http://localhost:8080/api/v1/collections \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "my_embeddings",
+        "vector_dimension": 768
+      }'
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{
+      "name": "my_embeddings",
+      "vector_dimension": 768
+    }' localhost:6309 collection.CollectionService/CreateCollection
+    ```
+  </Tab>
+</Tabs>
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Unique collection name |
+| `vector_dimension` | integer | Yes | Fixed dimension for all vectors |
+| `metadata_schema` | object | No | Optional metadata schema definition |
+
+### Response
+
+```json
+{
+  "collection": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "createdAt": "2026-01-15T10:00:00Z",
+    "updatedAt": "2026-01-15T10:00:00Z",
+    "name": "my_embeddings",
+    "vectorDimension": 768,
+    "documentCount": "0"
+  }
+}
+```
+
+---
+
+## Get Collection
+
+Retrieve a specific collection by ID.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl http://localhost:8080/api/v1/collections/{id}
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{"id": "COLLECTION_ID"}' \
+      localhost:6309 collection.CollectionService/ListCollection
+    ```
+  </Tab>
+</Tabs>
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | string (UUID) | Collection ID |
+
+---
+
+## List Collections
+
+List all collections with optional pagination.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl "http://localhost:8080/api/v1/collections?limit=20&offset=0"
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{"limit": 20, "offset": 0}' \
+      localhost:6309 collection.CollectionService/ListCollections
+    ```
+  </Tab>
+</Tabs>
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | integer | 50 | Maximum collections to return |
+| `offset` | integer | 0 | Pagination offset |
+
+### Response
+
+```json
+{
+  "collections": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "my_embeddings",
+      "vectorDimension": 768,
+      "documentCount": "42"
+    }
+  ]
+}
+```
+
+---
+
+## Delete Collection
+
+Delete a collection and all its documents.
+
+<Warning>
+This operation cascades - all documents in the collection will be permanently deleted.
+</Warning>
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X DELETE http://localhost:8080/api/v1/collections/{id}
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{"id": "COLLECTION_ID"}' \
+      localhost:6309 collection.CollectionService/DeleteCollection
+    ```
+  </Tab>
+</Tabs>
+
+### Response
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "deletedAt": "2026-01-15T10:30:00Z",
+  "documentDeleted": "42"
+}
+```

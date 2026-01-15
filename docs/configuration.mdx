@@ -1,0 +1,99 @@
+---
+title: Configuration
+description: 'Environment variables and server configuration'
+---
+
+## Environment Variables
+
+VectorSync is configured via environment variables. Create a `.env` file in the project root.
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DB_URL` | PostgreSQL connection string | `postgres://user:pass@localhost:5432/vectorsync?sslmode=disable` |
+
+### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GRPC_PORT` | `6309` | gRPC server port |
+| `HTTP_PORT` | `8080` | HTTP gateway port |
+| `LOG_LEVEL` | `info` | Logging level (debug, info, warn, error) |
+| `MAX_DB_CONNECTIONS` | `10` | Maximum database connections |
+| `IDLE_DB_CONNECTIONS` | `5` | Idle database connections |
+
+## Example Configuration
+
+```bash .env
+# Database
+DB_URL=postgres://vectorsync:password@localhost:5432/vectorsync?sslmode=disable
+
+# Server ports
+GRPC_PORT=6309
+HTTP_PORT=8080
+
+# Logging
+LOG_LEVEL=info
+
+# Database pool
+MAX_DB_CONNECTIONS=10
+IDLE_DB_CONNECTIONS=5
+```
+
+## Database Setup
+
+### Installing pgvector
+
+<Tabs>
+  <Tab title="Ubuntu/Debian">
+    ```bash
+    sudo apt install postgresql-15-pgvector
+    ```
+  </Tab>
+  <Tab title="macOS">
+    ```bash
+    brew install pgvector
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    docker pull pgvector/pgvector:pg15
+    ```
+  </Tab>
+</Tabs>
+
+### Running Migrations
+
+```bash
+psql $DB_URL -f migrations/001_enable_pgvector.up.sql
+psql $DB_URL -f migrations/002_create_collections.up.sql
+psql $DB_URL -f migrations/003_create_documents.up.sql
+```
+
+## Makefile Commands
+
+VectorSync includes a Makefile for common tasks:
+
+```bash
+# Show all commands
+make help
+
+# Build and run
+make build      # Build production binary
+make run        # Run the server
+make dev        # Run with hot reload (requires air)
+
+# Development
+make format     # Format code
+make lint       # Run linters
+make test       # Run tests
+
+# Docker
+make docker-up      # Start containers
+make docker-down    # Stop containers
+
+# Database
+make migrate-up     # Run migrations
+make proto          # Generate protobuf code
+```

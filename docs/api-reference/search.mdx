@@ -1,0 +1,145 @@
+---
+title: Search
+description: 'Vector similarity search endpoints'
+---
+
+## Search Documents
+
+Find documents with similar vectors using cosine similarity.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X POST http://localhost:8080/api/v1/documents/search \
+      -H "Content-Type: application/json" \
+      -d '{
+        "collection_id": "COLLECTION_ID",
+        "query_vector": [0.15, 0.22, 0.31],
+        "top_k": 10
+      }'
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{
+      "collection_id": "COLLECTION_ID",
+      "query_vector": [0.15, 0.22, 0.31],
+      "top_k": 10
+    }' localhost:6309 document.DocumentService/SearchDocuments
+    ```
+  </Tab>
+</Tabs>
+
+### Request Body
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `collection_id` | string (UUID) | Yes | - | Collection to search in |
+| `query_vector` | array[float] | Yes | - | Query vector (must match collection dimension) |
+| `top_k` | integer | No | 10 | Number of results (max 1000) |
+| `metadata_filter` | object | No | - | Filter results by metadata |
+| `include_vector` | boolean | No | false | Include vectors in response |
+| `min_threshold` | float | No | 0 | Minimum similarity score (0.0-1.0) |
+
+### Response
+
+```json
+{
+  "results": [
+    {
+      "document": {
+        "id": "770e8400-e29b-41d4-a716-446655440002",
+        "content": "Matching document content",
+        "metadata": {"category": {"value": "example"}}
+      },
+      "score": 0.9876
+    },
+    {
+      "document": {
+        "id": "880e8400-e29b-41d4-a716-446655440003",
+        "content": "Another matching document",
+        "metadata": {}
+      },
+      "score": 0.8543
+    }
+  ]
+}
+```
+
+<Info>
+The `score` field represents cosine similarity (1.0 = identical, 0.0 = orthogonal).
+</Info>
+
+---
+
+## Search with Metadata Filters
+
+Combine vector similarity with metadata filtering.
+
+```bash
+curl -X POST http://localhost:8080/api/v1/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "COLLECTION_ID",
+    "query_vector": [0.15, 0.22, 0.31],
+    "top_k": 5,
+    "metadata_filter": {
+      "category": {"value": "electronics"}
+    }
+  }'
+```
+
+This will:
+1. Filter documents where `metadata.category.value = "electronics"`
+2. Find top 5 most similar vectors among filtered documents
+
+---
+
+## Search with Threshold
+
+Only return results above a minimum similarity score.
+
+```bash
+curl -X POST http://localhost:8080/api/v1/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "COLLECTION_ID",
+    "query_vector": [0.15, 0.22, 0.31],
+    "top_k": 20,
+    "min_threshold": 0.75
+  }'
+```
+
+<Note>
+If fewer than `top_k` results meet the threshold, only those matching results are returned.
+</Note>
+
+---
+
+## Include Vectors in Response
+
+Get the actual vector embeddings in search results (useful for analysis).
+
+```bash
+curl -X POST http://localhost:8080/api/v1/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "COLLECTION_ID",
+    "query_vector": [0.15, 0.22, 0.31],
+    "top_k": 5,
+    "include_vector": true
+  }'
+```
+
+<Tip>
+Set `include_vector: false` (default) for smaller response payloads and faster transfers.
+</Tip>
+
+---
+
+## Best Practices
+
+1. **Start with small top_k** - Use `top_k=10` initially, increase as needed
+2. **Use metadata filters** - Pre-filter with metadata for better performance
+3. **Exclude vectors** - Set `include_vector: false` to reduce response size
+4. **Set thresholds wisely** - Use `min_threshold` to filter low-quality matches

@@ -1,0 +1,147 @@
+---
+title: Roadmap
+description: 'Future plans and upcoming features'
+---
+
+## Current Release: v0.1.0-alpha
+
+VectorSync is currently in alpha with core vector database functionality complete.
+
+### Completed Features
+
+<CardGroup cols={2}>
+  <Card title="Collection Management" icon="check">
+    Create, read, list, and delete collections with fixed vector dimensions
+  </Card>
+  <Card title="Document Operations" icon="check">
+    Insert, get, list, delete, and upsert documents with vectors and metadata
+  </Card>
+  <Card title="Vector Search" icon="check">
+    Cosine similarity search with top-K results and metadata filtering
+  </Card>
+  <Card title="Dual API" icon="check">
+    gRPC (port 6309) and HTTP/JSON (port 8080) interfaces
+  </Card>
+  <Card title="Health Checks" icon="check">
+    Kubernetes-compatible liveness and readiness probes
+  </Card>
+  <Card title="Graceful Shutdown" icon="check">
+    Proper signal handling with ordered resource cleanup
+  </Card>
+</CardGroup>
+
+---
+
+## Upcoming: v0.1.0-alpha (Completion)
+
+<Steps>
+  <Step title="Batch Operations">
+    Insert and delete multiple documents in a single request for improved throughput.
+  </Step>
+  <Step title="Full-Text Search">
+    Search on document content field using PostgreSQL tsvector.
+  </Step>
+  <Step title="Hybrid Search">
+    Combine vector similarity with metadata filters and full-text search.
+  </Step>
+</Steps>
+
+---
+
+## v0.2.0: Performance & Scalability
+
+### Approximate Nearest Neighbor (ANN) Search
+- HNSW index implementation using pgvector
+- IVFFlat index support
+- Configurable index type per collection
+- Background index rebuilding without downtime
+
+### Async Ingestion Pipeline
+- Write-ahead log for ingestion
+- Redis-based queue for async processing
+- Retry logic with exponential backoff
+- Ingestion status tracking API
+
+### Advanced Search
+- Custom scoring functions (weighted hybrid search)
+- Multi-vector search (multiple query vectors)
+- Filtered ANN (metadata filters during ANN)
+- Explain API (why documents matched)
+
+---
+
+## v0.3.0: Enterprise Features
+
+### Multi-Tenancy
+- Namespace isolation per tenant
+- Tenant-level quotas and rate limits
+- Per-tenant authentication
+- Data isolation guarantees
+
+### Authentication & Authorization
+- JWT token generation and validation
+- API key authentication
+- Role-based access control (RBAC)
+- Collection-level permissions
+
+### Operations
+- Backup and restore functionality
+- Point-in-time recovery
+- Collection snapshots and cloning
+- Data export (CSV, JSONL, Parquet)
+
+### Admin Dashboard
+- Web UI for monitoring
+- Collection management interface
+- Real-time metrics visualization
+- User and permission management
+
+---
+
+## v0.4.0: Advanced Capabilities
+
+### Machine Learning Integration
+- Built-in embedding generation via external model APIs
+- Model version tracking per collection
+- Automatic re-embedding on model updates
+
+### Advanced Indexing
+- Product quantization (PQ) for compression
+- Disk-based ANN indexes for large datasets
+- GPU-accelerated search
+- Multiple distance metrics (Euclidean, dot product)
+
+### Streaming & Real-Time
+- Streaming inserts (bidirectional gRPC)
+- Real-time index updates
+- Change data capture (CDC) for external systems
+- Webhook notifications on document changes
+
+---
+
+## Future Considerations
+
+<Info>
+These features are being evaluated for future releases based on community feedback.
+</Info>
+
+- Federated search across multiple VectorSync instances
+- Support for sparse vectors and hybrid dense-sparse search
+- Graph-based vector search
+- Integration with ML frameworks (LangChain, LlamaIndex)
+- Kubernetes Operator for automated deployment
+- Managed cloud service
+
+---
+
+## Contributing
+
+We welcome contributions! If you're interested in working on any of these features:
+
+1. Check the [GitHub Issues](https://github.com/Annany2002/VectorSync/issues) for existing discussions
+2. Open a new issue to discuss your proposed changes
+3. Submit a pull request with your implementation
+
+<Card title="GitHub Repository" icon="github" href="https://github.com/Annany2002/VectorSync">
+  Star the repo and contribute to VectorSync
+</Card>

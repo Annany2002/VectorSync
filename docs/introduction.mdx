@@ -1,0 +1,76 @@
+---
+title: Introduction
+description: 'A production-ready, self-hostable vector database for semantic search'
+---
+
+# Welcome to VectorSync
+
+VectorSync is a high-performance vector indexing engine designed for enterprise applications requiring real-time similarity search, hybrid search capabilities, and reliable embedding storage.
+
+Built with **Go** and **PostgreSQL with pgvector**, it provides both gRPC and HTTP/JSON APIs for seamless integration into modern microservice architectures.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Vector Similarity Search" icon="magnifying-glass">
+    Cosine similarity search with configurable top-K results
+  </Card>
+  <Card title="Dual API Support" icon="code">
+    Native gRPC with HTTP/JSON gateway via grpc-gateway
+  </Card>
+  <Card title="Collection Management" icon="folder">
+    Organize embeddings into collections with fixed dimensions
+  </Card>
+  <Card title="CRUD Operations" icon="database">
+    Insert, upsert, retrieve, and delete documents with embeddings
+  </Card>
+</CardGroup>
+
+## Current Capabilities (v0.1.0-alpha)
+
+| Feature | Status |
+|---------|--------|
+| Collection CRUD | Complete |
+| Document CRUD | Complete |
+| Document Upsert | Complete |
+| Vector Search (Cosine) | Complete |
+| Metadata Filtering | Complete |
+| Health Checks | Complete |
+| Graceful Shutdown | Complete |
+| gRPC API | Complete |
+| HTTP/JSON API | Complete |
+
+## Architecture Overview
+
+VectorSync uses a hybrid architecture combining in-memory indexing with persistent storage:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Client Apps                       │
+└────────────┬────────────────────┬───────────────────┘
+             │                    │
+        gRPC │               HTTP │ (grpc-gateway)
+             │                    │
+┌────────────┴────────────────────┴───────────────────┐
+│              VectorSync Server                      │
+│                      │                              │
+│                      │ Atomic Writes                │
+│                      ▼                              │
+│  ┌──────────────────────────────────────────────┐   │
+│  │   PostgreSQL + pgvector Extension            │   │
+│  │   - Collections table                        │   │
+│  │   - Documents table (vectors + metadata)     │   │
+│  └──────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────┘
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/overview">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>
