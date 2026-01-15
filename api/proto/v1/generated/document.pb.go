@@ -738,6 +738,143 @@ func (x *SearchDocumentResponse) GetResults() []*SearchResult {
 	return nil
 }
 
+// UpsertDocumentRequest represents a request to insert or update a document
+type UpsertDocumentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id of the document (required for upsert - used as conflict key)
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// id of the collection the document belongs to
+	CollectionId string `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// content of the document
+	Content string `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	// vector representation of the document
+	Vector []float32 `protobuf:"fixed32,4,rep,packed,name=vector,proto3" json:"vector,omitempty"`
+	// metadata associated with the document
+	Metadata      map[string]*structpb.Struct `protobuf:"bytes,5,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertDocumentRequest) Reset() {
+	*x = UpsertDocumentRequest{}
+	mi := &file_document_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertDocumentRequest) ProtoMessage() {}
+
+func (x *UpsertDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertDocumentRequest.ProtoReflect.Descriptor instead.
+func (*UpsertDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *UpsertDocumentRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpsertDocumentRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *UpsertDocumentRequest) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *UpsertDocumentRequest) GetVector() []float32 {
+	if x != nil {
+		return x.Vector
+	}
+	return nil
+}
+
+func (x *UpsertDocumentRequest) GetMetadata() map[string]*structpb.Struct {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+// UpsertDocumentResponse represents a response to upsert a document
+type UpsertDocumentResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the upserted document
+	Document *Document `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	// true if document was created, false if updated
+	IsNew         bool `protobuf:"varint,2,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertDocumentResponse) Reset() {
+	*x = UpsertDocumentResponse{}
+	mi := &file_document_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertDocumentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertDocumentResponse) ProtoMessage() {}
+
+func (x *UpsertDocumentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertDocumentResponse.ProtoReflect.Descriptor instead.
+func (*UpsertDocumentResponse) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UpsertDocumentResponse) GetDocument() *Document {
+	if x != nil {
+		return x.Document
+	}
+	return nil
+}
+
+func (x *UpsertDocumentResponse) GetIsNew() bool {
+	if x != nil {
+		return x.IsNew
+	}
+	return false
+}
+
 var File_document_proto protoreflect.FileDescriptor
 
 const file_document_proto_rawDesc = "" +
@@ -796,9 +933,22 @@ const file_document_proto_rawDesc = "" +
 	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\x12\x14\n" +
 	"\x05score\x18\x02 \x01(\x02R\x05score\"J\n" +
 	"\x16SearchDocumentResponse\x120\n" +
-	"\aresults\x18\x01 \x03(\v2\x16.document.SearchResultR\aresults2\xd0\x04\n" +
+	"\aresults\x18\x01 \x03(\v2\x16.document.SearchResultR\aresults\"\x9f\x02\n" +
+	"\x15UpsertDocumentRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
+	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\tR\acontent\x12\x16\n" +
+	"\x06vector\x18\x04 \x03(\x02R\x06vector\x12I\n" +
+	"\bmetadata\x18\x05 \x03(\v2-.document.UpsertDocumentRequest.MetadataEntryR\bmetadata\x1aT\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"_\n" +
+	"\x16UpsertDocumentResponse\x12.\n" +
+	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\x12\x15\n" +
+	"\x06is_new\x18\x02 \x01(\bR\x05isNew2\xc8\x05\n" +
 	"\x0fDocumentService\x12q\n" +
-	"\x0eCreateDocument\x12\x1f.document.CreateDocumentRequest\x1a .document.CreateDocumentResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/documents\x12m\n" +
+	"\x0eCreateDocument\x12\x1f.document.CreateDocumentRequest\x1a .document.CreateDocumentResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/documents\x12v\n" +
+	"\x0eUpsertDocument\x12\x1f.document.UpsertDocumentRequest\x1a .document.UpsertDocumentResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/api/v1/documents/{id}\x12m\n" +
 	"\fListDocument\x12\x1d.document.ListDocumentRequest\x1a\x1e.document.ListDocumentResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/documents/{id}\x12k\n" +
 	"\rListDocuments\x12\x1e.document.ListDocumentsRequest\x1a\x1f.document.ListDocumentsResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/documents\x12s\n" +
 	"\x0eDeleteDocument\x12\x1f.document.DeleteDocumentRequest\x1a .document.DeleteDocumentResponse\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/api/v1/documents/{id}\x12y\n" +
@@ -816,7 +966,7 @@ func file_document_proto_rawDescGZIP() []byte {
 	return file_document_proto_rawDescData
 }
 
-var file_document_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_document_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_document_proto_goTypes = []any{
 	(*Document)(nil),               // 0: document.Document
 	(*CreateDocumentRequest)(nil),  // 1: document.CreateDocumentRequest
@@ -830,42 +980,50 @@ var file_document_proto_goTypes = []any{
 	(*SearchDocumentRequest)(nil),  // 9: document.SearchDocumentRequest
 	(*SearchResult)(nil),           // 10: document.SearchResult
 	(*SearchDocumentResponse)(nil), // 11: document.SearchDocumentResponse
-	nil,                            // 12: document.Document.MetadataEntry
-	nil,                            // 13: document.CreateDocumentRequest.MetadataEntry
-	nil,                            // 14: document.SearchDocumentRequest.MetadataFilterEntry
-	(*timestamppb.Timestamp)(nil),  // 15: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),        // 16: google.protobuf.Struct
+	(*UpsertDocumentRequest)(nil),  // 12: document.UpsertDocumentRequest
+	(*UpsertDocumentResponse)(nil), // 13: document.UpsertDocumentResponse
+	nil,                            // 14: document.Document.MetadataEntry
+	nil,                            // 15: document.CreateDocumentRequest.MetadataEntry
+	nil,                            // 16: document.SearchDocumentRequest.MetadataFilterEntry
+	nil,                            // 17: document.UpsertDocumentRequest.MetadataEntry
+	(*timestamppb.Timestamp)(nil),  // 18: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),        // 19: google.protobuf.Struct
 }
 var file_document_proto_depIdxs = []int32{
-	15, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
-	15, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
-	12, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
-	13, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
+	18, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
+	18, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
+	15, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
 	0,  // 4: document.CreateDocumentResponse.document:type_name -> document.Document
 	0,  // 5: document.ListDocumentResponse.document:type_name -> document.Document
 	0,  // 6: document.ListDocumentsResponse.documents:type_name -> document.Document
-	15, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	14, // 8: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
+	18, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	16, // 8: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
 	0,  // 9: document.SearchResult.document:type_name -> document.Document
 	10, // 10: document.SearchDocumentResponse.results:type_name -> document.SearchResult
-	16, // 11: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
-	16, // 12: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	16, // 13: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
-	1,  // 14: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
-	3,  // 15: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
-	5,  // 16: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
-	7,  // 17: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
-	9,  // 18: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
-	2,  // 19: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
-	4,  // 20: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
-	6,  // 21: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
-	8,  // 22: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
-	11, // 23: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
-	19, // [19:24] is the sub-list for method output_type
-	14, // [14:19] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	17, // 11: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
+	0,  // 12: document.UpsertDocumentResponse.document:type_name -> document.Document
+	19, // 13: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
+	19, // 14: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	19, // 15: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
+	19, // 16: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	1,  // 17: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
+	12, // 18: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
+	3,  // 19: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
+	5,  // 20: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
+	7,  // 21: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
+	9,  // 22: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
+	2,  // 23: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
+	13, // 24: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
+	4,  // 25: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
+	6,  // 26: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
+	8,  // 27: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
+	11, // 28: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
+	23, // [23:29] is the sub-list for method output_type
+	17, // [17:23] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_document_proto_init() }
@@ -879,7 +1037,7 @@ func file_document_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_document_proto_rawDesc), len(file_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

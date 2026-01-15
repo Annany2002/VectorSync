@@ -75,6 +75,59 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionId, cont
 	return document, nil
 }
 
+// UpsertDocument inserts or updates a document
+func (s *DocumentService) UpsertDocument(ctx context.Context, documentId, collectionId, content string, vector []float32, metadata map[string]any) (*db.UpsertResult, error) {
+	// Perform null checks
+	if documentId == "" {
+		return nil, errors.New("document_id is required for upsert")
+	}
+	if collectionId == "" {
+		return nil, errors.New("collection_id is required")
+	}
+	if len(vector) == 0 {
+		return nil, errors.New("vector cannot be empty")
+	}
+	if metadata == nil {
+		metadata = make(map[string]any)
+	}
+
+	// Check if collection exists (and fetch it for dimension validation)
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Vector dimension matches collection's expected dimension
+	if len(vector) != collection.VectorDimension {
+		return nil, fmt.Errorf(
+			"vector dimension mismatch: collection expects %d dimensions, got %d",
+			collection.VectorDimension,
+			len(vector),
+		)
+	}
+
+	// Validate vector values (no NaN or Infinity)
+	for i, val := range vector {
+		if math.IsNaN(float64(val)) {
+			return nil, fmt.Errorf("vector contains NaN at index %d", i)
+		}
+		if math.IsInf(float64(val), 0) {
+			return nil, fmt.Errorf("vector contains Infinity at index %d", i)
+		}
+	}
+
+	// Upsert the document
+	result, err := s.documentRepo.Upsert(ctx, documentId, collectionId, content, vector, metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert document: %w", err)
+	}
+
+	return result, nil
+}
+
 // Pagination Defaults
 const (
 	defaultLimit = 50

@@ -54,6 +54,36 @@ func (h *DocumentHandler) CreateDocument(ctx context.Context, req *pb.CreateDocu
 	}, nil
 }
 
+// UpsertDocument creates or updates a document with a specific ID
+func (h *DocumentHandler) UpsertDocument(ctx context.Context, req *pb.UpsertDocumentRequest) (*pb.UpsertDocumentResponse, error) {
+	// Extract the fields from request
+	documentId := req.GetId()
+	collectionId := req.GetCollectionId()
+	content := req.GetContent()
+	vector := req.GetVector()
+
+	// Convert protobuf map[string]*Struct to map[string]any
+	var metadata map[string]any
+	if req.GetMetadata() != nil {
+		metadata = make(map[string]any)
+		for key, value := range req.GetMetadata() {
+			metadata[key] = value.AsMap()
+		}
+	}
+
+	// Call service layer to upsert the document
+	result, err := h.documentService.UpsertDocument(ctx, documentId, collectionId, content, vector, metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build and return the gRPC response
+	return &pb.UpsertDocumentResponse{
+		Document: convertToProtoDocument(result.Document),
+		IsNew:    result.IsNew,
+	}, nil
+}
+
 // convertToProtoDocument converts a models.Document to a pb.Document
 func convertToProtoDocument(c *models.Document) *pb.Document {
 	// Convert metadata schema from map[string]any to map[string]*structpb.Struct

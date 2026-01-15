@@ -117,12 +117,40 @@ message SearchDocumentResponse {
     repeated SearchResult results = 1;
 }
 
+// UpsertDocumentRequest represents a request to insert or update a document
+message UpsertDocumentRequest {
+    // id of the document (required for upsert - used as conflict key)
+    string id = 1;
+    // id of the collection the document belongs to
+    string collection_id = 2;
+    // content of the document
+    string content = 3;
+    // vector representation of the document
+    repeated float vector = 4;
+    // metadata associated with the document
+    map<string, google.protobuf.Struct> metadata = 5;
+}
+
+// UpsertDocumentResponse represents a response to upsert a document
+message UpsertDocumentResponse {
+    // the upserted document
+    Document document = 1;
+    // true if document was created, false if updated
+    bool is_new = 2;
+}
+
 // DocumentService provides document management operations
 service DocumentService {
     rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse) {
         option (google.api.http) = {
             post: "/api/v1/documents"
             body : "*"
+        };
+    };
+    rpc UpsertDocument (UpsertDocumentRequest) returns (UpsertDocumentResponse) {
+        option (google.api.http) = {
+            put: "/api/v1/documents/{id}"
+            body: "*"
         };
     };
     rpc ListDocument (ListDocumentRequest) returns (ListDocumentResponse) {

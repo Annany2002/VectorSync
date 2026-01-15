@@ -69,6 +69,76 @@ func (r *DocumentRepo) Create(ctx context.Context, collectionId, content string,
 	return &document, nil
 }
 
+// UpsertResult contains the upserted document and whether it was newly created
+type UpsertResult struct {
+	Document *models.Document
+	IsNew    bool
+}
+
+// Upsert inserts a new document or updates an existing one
+// Uses PostgreSQL ON CONFLICT for atomic upsert operation
+func (r *DocumentRepo) Upsert(ctx context.Context, documentId, collectionId, content string, vector []float32, metadata map[string]any) (*UpsertResult, error) {
+	// Convert vector to PostgreSQL format: '[0.1,0.2,0.3]'
+	vectorStr := vectorToString(vector)
+
+	// Convert metadata map to JSONB
+	metadataJSON, err := json.Marshal(metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	// Use ON CONFLICT to insert or update atomically
+	// xmax = 0 means INSERT, non-zero means UPDATE
+	upsertQuery := `
+		INSERT INTO documents (id, collection_id, vector, metadata, content)
+		VALUES ($1, $2, $3::vector, $4, $5)
+		ON CONFLICT (id) DO UPDATE SET
+			vector = EXCLUDED.vector,
+			metadata = EXCLUDED.metadata,
+			content = EXCLUDED.content,
+			updated_at = NOW()
+		RETURNING id, collection_id, vector, metadata, content, created_at, updated_at, (xmax = 0) AS is_new
+	`
+
+	var document models.Document
+	var vectorStrReturned string
+	var metadataBytes []byte
+	var isNew bool
+
+	err = r.db.QueryRowContext(ctx, upsertQuery, documentId, collectionId, vectorStr, metadataJSON, content).Scan(
+		&document.Id,
+		&document.CollectionId,
+		&vectorStrReturned,
+		&metadataBytes,
+		&document.Content,
+		&document.CreatedAt,
+		&document.UpdatedAt,
+		&isNew,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert document: %w", err)
+	}
+
+	// Parse vector string back to []float32
+	document.Vector, err = stringToVector(vectorStrReturned)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+	}
+
+	// Parse metadata JSON back to map
+	if len(metadataBytes) > 0 {
+		err = json.Unmarshal(metadataBytes, &document.Metadata)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+		}
+	}
+
+	return &UpsertResult{
+		Document: &document,
+		IsNew:    isNew,
+	}, nil
+}
+
 // vectorToString converts []float32 to PostgreSQL vector format: '[1.0,2.0,3.0]'
 func vectorToString(vec []float32) string {
 	strVals := make([]string, len(vec))

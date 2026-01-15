@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	DocumentService_CreateDocument_FullMethodName  = "/document.DocumentService/CreateDocument"
+	DocumentService_UpsertDocument_FullMethodName  = "/document.DocumentService/UpsertDocument"
 	DocumentService_ListDocument_FullMethodName    = "/document.DocumentService/ListDocument"
 	DocumentService_ListDocuments_FullMethodName   = "/document.DocumentService/ListDocuments"
 	DocumentService_DeleteDocument_FullMethodName  = "/document.DocumentService/DeleteDocument"
@@ -33,6 +34,7 @@ const (
 // DocumentService provides document management operations
 type DocumentServiceClient interface {
 	CreateDocument(ctx context.Context, in *CreateDocumentRequest, opts ...grpc.CallOption) (*CreateDocumentResponse, error)
+	UpsertDocument(ctx context.Context, in *UpsertDocumentRequest, opts ...grpc.CallOption) (*UpsertDocumentResponse, error)
 	ListDocument(ctx context.Context, in *ListDocumentRequest, opts ...grpc.CallOption) (*ListDocumentResponse, error)
 	ListDocuments(ctx context.Context, in *ListDocumentsRequest, opts ...grpc.CallOption) (*ListDocumentsResponse, error)
 	DeleteDocument(ctx context.Context, in *DeleteDocumentRequest, opts ...grpc.CallOption) (*DeleteDocumentResponse, error)
@@ -51,6 +53,16 @@ func (c *documentServiceClient) CreateDocument(ctx context.Context, in *CreateDo
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateDocumentResponse)
 	err := c.cc.Invoke(ctx, DocumentService_CreateDocument_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *documentServiceClient) UpsertDocument(ctx context.Context, in *UpsertDocumentRequest, opts ...grpc.CallOption) (*UpsertDocumentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertDocumentResponse)
+	err := c.cc.Invoke(ctx, DocumentService_UpsertDocument_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +116,7 @@ func (c *documentServiceClient) SearchDocuments(ctx context.Context, in *SearchD
 // DocumentService provides document management operations
 type DocumentServiceServer interface {
 	CreateDocument(context.Context, *CreateDocumentRequest) (*CreateDocumentResponse, error)
+	UpsertDocument(context.Context, *UpsertDocumentRequest) (*UpsertDocumentResponse, error)
 	ListDocument(context.Context, *ListDocumentRequest) (*ListDocumentResponse, error)
 	ListDocuments(context.Context, *ListDocumentsRequest) (*ListDocumentsResponse, error)
 	DeleteDocument(context.Context, *DeleteDocumentRequest) (*DeleteDocumentResponse, error)
@@ -120,6 +133,9 @@ type UnimplementedDocumentServiceServer struct{}
 
 func (UnimplementedDocumentServiceServer) CreateDocument(context.Context, *CreateDocumentRequest) (*CreateDocumentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateDocument not implemented")
+}
+func (UnimplementedDocumentServiceServer) UpsertDocument(context.Context, *UpsertDocumentRequest) (*UpsertDocumentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertDocument not implemented")
 }
 func (UnimplementedDocumentServiceServer) ListDocument(context.Context, *ListDocumentRequest) (*ListDocumentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListDocument not implemented")
@@ -168,6 +184,24 @@ func _DocumentService_CreateDocument_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DocumentServiceServer).CreateDocument(ctx, req.(*CreateDocumentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DocumentService_UpsertDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertDocumentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DocumentServiceServer).UpsertDocument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DocumentService_UpsertDocument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DocumentServiceServer).UpsertDocument(ctx, req.(*UpsertDocumentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -254,6 +288,10 @@ var DocumentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateDocument",
 			Handler:    _DocumentService_CreateDocument_Handler,
+		},
+		{
+			MethodName: "UpsertDocument",
+			Handler:    _DocumentService_UpsertDocument_Handler,
 		},
 		{
 			MethodName: "ListDocument",
