@@ -136,12 +136,12 @@ This document tracks the detailed feature implementation status and future plans
   - [x] Database connectivity check
   - [ ] Memory index status check
 
-- [ ] **Operational Features**
-  - [ ] Graceful shutdown (complete in-flight requests)
+- [x] **Operational Features**
+  - [x] Graceful shutdown (complete in-flight requests)
   - [x] Startup health checks
   - [x] Configuration validation at startup
   - [x] Environment-based configuration
-  - [ ] Signal handling (SIGTERM, SIGINT)
+  - [x] Signal handling (SIGTERM, SIGINT)
 
 ### Infrastructure & Deployment
 - [ ] **Containerization**

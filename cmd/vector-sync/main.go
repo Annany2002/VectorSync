@@ -4,6 +4,10 @@ import (
 	"context"
 	"net"      // for grpc server
 	"net/http" // for http gateway
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	pb "github.com/Annany2002/vector-sync/api/proto/v1/generated"
 	"github.com/Annany2002/vector-sync/internal/db"
@@ -29,7 +33,6 @@ func main() {
 		log.Errorf("Failed to connect to database: %v", err)
 		return
 	}
-	defer dbConn.Close()
 
 	// Create repository layer (talks to database)
 	collectionRepo := db.NewCollectionRepo(dbConn)
@@ -63,9 +66,9 @@ func main() {
 		return
 	}
 
-	// Create the grpc gateway within a go-routine
+	// Start gRPC server in a goroutine
 	go func() {
-		// Start serving gRPC requests
+		log.Infof("VectorSync gRPC server started on :6309")
 		if err := grpcServer.Serve(listener); err != nil {
 			log.Errorf("Failed to serve gRPC: %v", err)
 		}
@@ -107,11 +110,52 @@ func main() {
 		log.Fatalf("Failed to register health gateway: %v", err)
 	}
 
-	log.Infof("VectorSync gRPC server started on :6309")
-	log.Infof("VectorSync HTTP gateway started on :8080")
-
-	// Start HTTP server (blocks on main thread)
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("Failed to serve HTTP gateway: %v", err)
+	// Create HTTP server with explicit configuration
+	httpServer := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
 	}
+
+	// Start HTTP server in a goroutine
+	go func() {
+		log.Infof("VectorSync HTTP gateway started on :8080")
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to serve HTTP gateway: %v", err)
+		}
+	}()
+
+	// Set up signal handling for graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	// Block until we receive a shutdown signal
+	sig := <-stop
+	log.Infof("Received signal %v, initiating graceful shutdown...", sig)
+
+	// Create a context with timeout for shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Shutdown HTTP server first (stop accepting new requests)
+	log.Infof("Shutting down HTTP gateway...")
+	if err := httpServer.Shutdown(ctx); err != nil {
+		log.Errorf("HTTP server shutdown error: %v", err)
+	} else {
+		log.Infof("HTTP gateway shutdown complete")
+	}
+
+	// Gracefully stop gRPC server (waits for active RPCs to complete)
+	log.Infof("Shutting down gRPC server...")
+	grpcServer.GracefulStop()
+	log.Infof("gRPC server shutdown complete")
+
+	// Close database connection
+	log.Infof("Closing database connection...")
+	if err := dbConn.Close(); err != nil {
+		log.Errorf("Database close error: %v", err)
+	} else {
+		log.Infof("Database connection closed")
+	}
+
+	log.Infof("VectorSync shutdown complete")
 }
