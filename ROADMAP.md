@@ -47,7 +47,7 @@ This document tracks the detailed feature implementation status and future plans
   - [x] List documents from collection with pagination
   - [x] Get single document by ID
   - [x] Delete document by ID
-  - [ ] Upsert document (insert or update if exists)
+  - [x] Upsert document (insert or update if exists)
   - [ ] Batch insert documents (multiple docs in one request)
   - [ ] Batch delete documents
 

@@ -37,6 +37,7 @@ GET    /api/v1/collections/{id}         # Get collection
 DELETE /api/v1/collections/{id}         # Delete collection
 
 POST   /api/v1/documents                # Create document
+PUT    /api/v1/documents/{id}            # Upsert document (create or update)
 GET    /api/v1/documents                # List documents
 GET    /api/v1/documents/{id}           # Get document
 DELETE /api/v1/documents/{id}           # Delete document
