@@ -139,6 +139,26 @@ message UpsertDocumentResponse {
     bool is_new = 2;
 }
 
+// FullTextSearchRequest represent a request for performing `full text search` on a collection
+message FullTextSearchRequest {
+    // id of the collection to search within
+    string collection_id = 1;
+
+    // Search query text (supports multiple words)
+    string query = 2;
+
+    // Maximum number of results to return
+    int32 limit = 3;
+
+    // Minimum relevance rank threshold (0.0 to 1.0, 0 means no threshold)
+    float min_rank = 4;
+}
+
+// FullTextSearchResponse represent a response for `full text search` for a document
+message FullTextSearchResponse {
+    repeated SearchResult result = 1;
+}
+
 // DocumentService provides document management operations
 service DocumentService {
     rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse) {
@@ -171,6 +191,12 @@ service DocumentService {
     rpc SearchDocuments (SearchDocumentRequest) returns (SearchDocumentResponse) {
         option (google.api.http) = {
             post: "/api/v1/documents/search"
+            body: "*"
+        };
+    };
+    rpc FullTextSearch (FullTextSearchRequest) returns (FullTextSearchResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents/text-search"
             body: "*"
         };
     };
