@@ -84,37 +84,6 @@ func (h *DocumentHandler) UpsertDocument(ctx context.Context, req *pb.UpsertDocu
 	}, nil
 }
 
-// convertToProtoDocument converts a models.Document to a pb.Document
-func convertToProtoDocument(c *models.Document) *pb.Document {
-	// Convert metadata schema from map[string]any to map[string]*structpb.Struct
-	// This is needed because gRPC uses protobuf types, not Go native types
-	metadataProto := make(map[string]*structpb.Struct)
-	for key, value := range c.Metadata {
-		// Type assertion: check if value is a map[string]any
-		valueMap, ok := value.(map[string]any)
-		if !ok {
-			continue // Skip non-map values
-		}
-		// Convert Go map to protobuf Struct
-		structValue, err := structpb.NewStruct(valueMap)
-		if err != nil {
-			continue // Skip on conversion error
-		}
-		metadataProto[key] = structValue
-	}
-
-	// Build and return the protobuf Collection message
-	return &pb.Document{
-		Id:           c.Id,
-		CreatedAt:    timestamppb.New(c.CreatedAt),
-		UpdatedAt:    timestamppb.New(c.UpdatedAt),
-		CollectionId: c.CollectionId,
-		Content:      c.Content,
-		Vector:       []float32(c.Vector),
-		Metadata:     metadataProto,
-	}
-}
-
 // ListDocuments retrieves documents from a collection with pagination
 func (h *DocumentHandler) ListDocuments(ctx context.Context, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
 	// Extract parameters from request
@@ -252,4 +221,35 @@ func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDoc
 	return &pb.SearchDocumentResponse{
 		Results: pbResults,
 	}, nil
+}
+
+// convertToProtoDocument converts a models.Document to a pb.Document
+func convertToProtoDocument(c *models.Document) *pb.Document {
+	// Convert metadata schema from map[string]any to map[string]*structpb.Struct
+	// This is needed because gRPC uses protobuf types, not Go native types
+	metadataProto := make(map[string]*structpb.Struct)
+	for key, value := range c.Metadata {
+		// Type assertion: check if value is a map[string]any
+		valueMap, ok := value.(map[string]any)
+		if !ok {
+			continue // Skip non-map values
+		}
+		// Convert Go map to protobuf Struct
+		structValue, err := structpb.NewStruct(valueMap)
+		if err != nil {
+			continue // Skip on conversion error
+		}
+		metadataProto[key] = structValue
+	}
+
+	// Build and return the protobuf Collection message
+	return &pb.Document{
+		Id:           c.Id,
+		CreatedAt:    timestamppb.New(c.CreatedAt),
+		UpdatedAt:    timestamppb.New(c.UpdatedAt),
+		CollectionId: c.CollectionId,
+		Content:      c.Content,
+		Vector:       []float32(c.Vector),
+		Metadata:     metadataProto,
+	}
 }
