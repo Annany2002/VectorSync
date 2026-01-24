@@ -1,5 +1,5 @@
 <p align="center"\>
-<img src="./assets/Logo.png" alt="VectorSync Logo" width="200" height="300"/\>
+<img src="./docs/assets/Logo.png" alt="VectorSync Logo" width="200" height="300"/\>
 </p\>
 
 # VectorSync
