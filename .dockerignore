@@ -5,8 +5,8 @@
 *.so
 *.dylib
 
-# Project executable binary (adjust the name if you build with -o flag)
-go-baas-mvp
+# Project executable binary
+vectorsync
 
 # Test binary built with `go test -c`
 *.test

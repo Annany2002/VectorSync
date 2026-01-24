@@ -1,17 +1,39 @@
 services:
-  vectorsync:
+# api layer
+  api:
+    container_name: vectorsync
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "6309:6309"
+      - "8080:8080"
     env_file:
       - .env
+    depends_on:
+      - db
+    networks:
+      - vectorsync
+
+# postgres database
+  db:
+    container_name: vectorsync-db
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
     networks:
       - vectorsync
 
 volumes:
   vectorsync:
+  db:
 
 networks:
   vectorsync:
