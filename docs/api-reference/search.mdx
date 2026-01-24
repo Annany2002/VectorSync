@@ -1,6 +1,6 @@
 ---
 title: Search
-description: 'Vector similarity search endpoints'
+description: 'Vector similarity and full-text search endpoints'
 ---
 
 ## Search Documents
@@ -137,9 +137,91 @@ Set `include_vector: false` (default) for smaller response payloads and faster t
 
 ---
 
+## Full-Text Search
+
+Search documents by content using PostgreSQL's built-in full-text search.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X POST http://localhost:8080/api/v1/documents/text-search \
+      -H "Content-Type: application/json" \
+      -d '{
+        "collection_id": "COLLECTION_ID",
+        "query": "database search",
+        "limit": 10
+      }'
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{
+      "collection_id": "COLLECTION_ID",
+      "query": "database search",
+      "limit": 10
+    }' localhost:6309 document.DocumentService/FullTextSearch
+    ```
+  </Tab>
+</Tabs>
+
+### Request Body
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `collection_id` | string (UUID) | Yes | - | Collection to search in |
+| `query` | string | Yes | - | Search text (supports multiple words) |
+| `limit` | integer | No | 10 | Maximum results to return |
+| `min_rank` | float | No | 0 | Minimum relevance threshold (0.0-1.0) |
+
+### Response
+
+```json
+{
+  "result": [
+    {
+      "document": {
+        "id": "770e8400-e29b-41d4-a716-446655440002",
+        "content": "PostgreSQL is a powerful database with search capabilities",
+        "vector": [0.1, 0.2, 0.3],
+        "metadata": {}
+      },
+      "score": 0.0608
+    }
+  ]
+}
+```
+
+<Info>
+The `score` field represents relevance rank from PostgreSQL's `ts_rank` function. Higher scores indicate better matches.
+</Info>
+
+---
+
+## Full-Text Search with Threshold
+
+Only return results above a minimum relevance score.
+
+```bash
+curl -X POST http://localhost:8080/api/v1/documents/text-search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "COLLECTION_ID",
+    "query": "vector embeddings",
+    "limit": 20,
+    "min_rank": 0.05
+  }'
+```
+
+<Note>
+Full-text search uses PostgreSQL's `to_tsvector` and `plainto_tsquery` for matching. It supports stemming (e.g., "running" matches "run") and ignores common stop words.
+</Note>
+
+---
+
 ## Best Practices
 
 1. **Start with small top_k** - Use `top_k=10` initially, increase as needed
 2. **Use metadata filters** - Pre-filter with metadata for better performance
 3. **Exclude vectors** - Set `include_vector: false` to reduce response size
 4. **Set thresholds wisely** - Use `min_threshold` to filter low-quality matches
+5. **Combine search types** - Use vector search for semantic similarity, full-text for keyword matching

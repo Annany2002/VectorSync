@@ -19,6 +19,9 @@ VectorSync is currently in alpha with core vector database functionality complet
   <Card title="Vector Search" icon="check">
     Cosine similarity search with top-K results and metadata filtering
   </Card>
+  <Card title="Full-Text Search" icon="check">
+    Search document content using PostgreSQL tsvector with relevance ranking
+  </Card>
   <Card title="Dual API" icon="check">
     gRPC (port 6309) and HTTP/JSON (port 8080) interfaces
   </Card>
@@ -37,9 +40,6 @@ VectorSync is currently in alpha with core vector database functionality complet
 <Steps>
   <Step title="Batch Operations">
     Insert and delete multiple documents in a single request for improved throughput.
-  </Step>
-  <Step title="Full-Text Search">
-    Search on document content field using PostgreSQL tsvector.
   </Step>
   <Step title="Hybrid Search">
     Combine vector similarity with metadata filters and full-text search.
