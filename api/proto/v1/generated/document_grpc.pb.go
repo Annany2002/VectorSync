@@ -25,6 +25,7 @@ const (
 	DocumentService_ListDocuments_FullMethodName   = "/document.DocumentService/ListDocuments"
 	DocumentService_DeleteDocument_FullMethodName  = "/document.DocumentService/DeleteDocument"
 	DocumentService_SearchDocuments_FullMethodName = "/document.DocumentService/SearchDocuments"
+	DocumentService_FullTextSearch_FullMethodName  = "/document.DocumentService/FullTextSearch"
 )
 
 // DocumentServiceClient is the client API for DocumentService service.
@@ -39,6 +40,7 @@ type DocumentServiceClient interface {
 	ListDocuments(ctx context.Context, in *ListDocumentsRequest, opts ...grpc.CallOption) (*ListDocumentsResponse, error)
 	DeleteDocument(ctx context.Context, in *DeleteDocumentRequest, opts ...grpc.CallOption) (*DeleteDocumentResponse, error)
 	SearchDocuments(ctx context.Context, in *SearchDocumentRequest, opts ...grpc.CallOption) (*SearchDocumentResponse, error)
+	FullTextSearch(ctx context.Context, in *FullTextSearchRequest, opts ...grpc.CallOption) (*FullTextSearchResponse, error)
 }
 
 type documentServiceClient struct {
@@ -109,6 +111,16 @@ func (c *documentServiceClient) SearchDocuments(ctx context.Context, in *SearchD
 	return out, nil
 }
 
+func (c *documentServiceClient) FullTextSearch(ctx context.Context, in *FullTextSearchRequest, opts ...grpc.CallOption) (*FullTextSearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FullTextSearchResponse)
+	err := c.cc.Invoke(ctx, DocumentService_FullTextSearch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DocumentServiceServer is the server API for DocumentService service.
 // All implementations must embed UnimplementedDocumentServiceServer
 // for forward compatibility.
@@ -121,6 +133,7 @@ type DocumentServiceServer interface {
 	ListDocuments(context.Context, *ListDocumentsRequest) (*ListDocumentsResponse, error)
 	DeleteDocument(context.Context, *DeleteDocumentRequest) (*DeleteDocumentResponse, error)
 	SearchDocuments(context.Context, *SearchDocumentRequest) (*SearchDocumentResponse, error)
+	FullTextSearch(context.Context, *FullTextSearchRequest) (*FullTextSearchResponse, error)
 	mustEmbedUnimplementedDocumentServiceServer()
 }
 
@@ -148,6 +161,9 @@ func (UnimplementedDocumentServiceServer) DeleteDocument(context.Context, *Delet
 }
 func (UnimplementedDocumentServiceServer) SearchDocuments(context.Context, *SearchDocumentRequest) (*SearchDocumentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchDocuments not implemented")
+}
+func (UnimplementedDocumentServiceServer) FullTextSearch(context.Context, *FullTextSearchRequest) (*FullTextSearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FullTextSearch not implemented")
 }
 func (UnimplementedDocumentServiceServer) mustEmbedUnimplementedDocumentServiceServer() {}
 func (UnimplementedDocumentServiceServer) testEmbeddedByValue()                         {}
@@ -278,6 +294,24 @@ func _DocumentService_SearchDocuments_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DocumentService_FullTextSearch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FullTextSearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DocumentServiceServer).FullTextSearch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DocumentService_FullTextSearch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DocumentServiceServer).FullTextSearch(ctx, req.(*FullTextSearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DocumentService_ServiceDesc is the grpc.ServiceDesc for DocumentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -308,6 +342,10 @@ var DocumentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchDocuments",
 			Handler:    _DocumentService_SearchDocuments_Handler,
+		},
+		{
+			MethodName: "FullTextSearch",
+			Handler:    _DocumentService_FullTextSearch_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
