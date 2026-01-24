@@ -11,7 +11,7 @@ all: format lint test build
 # Build the binary
 build:
 	@echo "Building Vectorsync for production..."
-	@go build -o bin/vectorsync cmd/server/main.go
+	@go build -o bin/vectorsync ./cmd/vector-sync/main.go
 
 # Run the server in production
 run: build

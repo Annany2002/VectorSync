@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o vectorsync cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o vectorsync ./cmd/vector-sync/main.go
 
 # Final stage
 FROM alpine:latest
