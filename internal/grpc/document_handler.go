@@ -143,7 +143,7 @@ func (h *DocumentHandler) DeleteDocument(ctx context.Context, req *pb.DeleteDocu
 	}, nil
 }
 
-// SearchDocuments searches a similar document in collection
+// SearchDocuments searches similar documents in collection using vector search
 func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDocumentRequest) (*pb.SearchDocumentResponse, error) {
 	// Extract the fields
 	collectionId := req.GetCollectionId()
@@ -220,6 +220,70 @@ func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDoc
 
 	return &pb.SearchDocumentResponse{
 		Results: pbResults,
+	}, nil
+}
+
+// FullTextSearch searches documents in a collection using PostgreSQL full-text search
+func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSearchRequest) (*pb.FullTextSearchResponse, error) {
+	// Extract the fields
+	collectionId := req.GetCollectionId()
+	query := req.GetQuery()
+
+	// Basic validations
+	if collectionId == "" {
+		return nil, errors.New("collection_id cannot be empty")
+	}
+	if query == "" {
+		return nil, errors.New("query cannot be empty")
+	}
+
+	// check if collection exists or not
+	_, err := h.collectionService.ListCollection(ctx, collectionId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("collection with id %s not found", collectionId)
+		}
+		return nil, err
+	}
+
+	// Extract limit (default: 10 if not specified)
+	limit := req.GetLimit()
+	if limit == 0 {
+		limit = 10
+	}
+
+	// Validate rank
+	minRank := req.GetMinRank()
+	if minRank < 0.0 || minRank > 1.0 {
+		return nil, fmt.Errorf("invalid value of %f for rank, should be between 0.0 and 1.0", minRank)
+	}
+
+	// Call service layer to perform search
+	searchResults, err := h.documentService.FullTextSearchDocuments(
+		ctx,
+		collectionId,
+		query,
+		limit,
+		minRank,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert db.SearchResult slice to pb.SearchResult slice
+	pbResults := make([]*pb.SearchResult, len(searchResults))
+	for i, result := range searchResults {
+		// Convert document to proto format
+		pbDoc := convertToProtoDocument(&result.Document)
+
+		pbResults[i] = &pb.SearchResult{
+			Document: pbDoc,
+			Score:    result.Score,
+		}
+	}
+
+	return &pb.FullTextSearchResponse{
+		Result: pbResults,
 	}, nil
 }
 

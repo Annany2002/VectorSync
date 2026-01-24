@@ -290,3 +290,42 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 
 	return results, nil
 }
+
+// FullTextSearchDocuments performs full-text search on document content
+// Returns documents ranked by relevance, filtered by optional minRank threshold
+func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectionId, query string, limit int32, minRank float32) ([]db.SearchResult, error) {
+	// Validate collection_id
+	if collectionId == "" {
+		return nil, errors.New("collection_id is required")
+	}
+
+	// Validate query
+	if query == "" {
+		return nil, errors.New("query cannot be empty")
+	}
+
+	// Check if collection exists
+	_, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Validate and normalize limit
+	if limit < 0 {
+		return nil, errors.New("limit cannot be negative")
+	}
+	if limit == 0 {
+		limit = defaultLimit // Use default if not specified
+	}
+
+	// Perform search via repository
+	results, err := s.documentRepo.FullTextSearch(ctx, collectionId, query, limit, minRank)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search documents: %w", err)
+	}
+
+	return results, nil
+}

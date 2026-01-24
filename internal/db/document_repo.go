@@ -411,3 +411,92 @@ func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVec
 
 	return results, nil
 }
+
+// FullTextSearch performs full-text search on document content
+// Uses PostgreSQL tsvector/tsquery for text matching and ts_rank for relevance scoring
+func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query string, limit int32, minRank float32) ([]SearchResult, error) {
+	// Note:
+	// Query is built dynamically because minRank is optional.
+	// When minRank is 0, we skip the threshold filter for better performance.
+
+	// base query
+	searchQuery := `
+		SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+			ts_rank(to_tsvector('english', COALESCE(content, '')),
+			plainto_tsquery('english', $1)) as rank
+		FROM documents
+		WHERE collection_id = $2 
+			AND to_tsvector('english', COALESCE(content, ''))
+				@@ plainto_tsquery('english', $1)
+	`
+
+	// args holds the ACTUAL VALUES that replace $1, $2, $3, etc.
+	// argIndex tracks the NEXT placeholder number to use
+	args := []any{query, collectionId}
+	argIndex := 3
+
+	// Add minimum rank threshold filter if specified
+	if minRank > 0 {
+		searchQuery += fmt.Sprintf(" AND ts_rank(to_tsvector('english', COALESCE(content, '')), plainto_tsquery('english', $1)) >= $%d", argIndex)
+
+		// Append minRank value to args slice
+		// args becomes: [query, collectionId, minRank]
+		args = append(args, minRank)
+		argIndex++
+	}
+	// add ORDER BY and LIMIT since it will be needed always
+	searchQuery += fmt.Sprintf(" ORDER BY rank DESC LIMIT $%d", argIndex)
+	args = append(args, limit)
+
+	rows, err := r.db.QueryContext(ctx, searchQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute search query: %w", err)
+	}
+	defer rows.Close()
+
+	var results []SearchResult
+
+	// Scan all rows
+	for rows.Next() {
+		var result SearchResult
+		var vectorStrReturned string
+		var metadataBytes []byte
+
+		err = rows.Scan(
+			&result.Document.Id,
+			&result.Document.CollectionId,
+			&vectorStrReturned,
+			&metadataBytes,
+			&result.Document.Content,
+			&result.Document.CreatedAt,
+			&result.Document.UpdatedAt,
+			&result.Score,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan search result: %w", err)
+		}
+
+		// Parse vector string back to []float32
+		result.Document.Vector, err = stringToVector(vectorStrReturned)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+		}
+
+		// Parse metadata JSON back to map
+		if len(metadataBytes) > 0 {
+			err = json.Unmarshal(metadataBytes, &result.Document.Metadata)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+			}
+		}
+
+		results = append(results, result)
+	}
+
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating search results: %w", err)
+	}
+
+	return results, nil
+}
