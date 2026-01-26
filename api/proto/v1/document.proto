@@ -159,6 +159,24 @@ message FullTextSearchResponse {
     repeated SearchResult result = 1;
 }
 
+// BatchInsertDocumentRequest represents a batch insert of documents in a collection
+message BatchInsertDocumentRequest {
+    // the collection_id
+    string collection_id = 1;
+
+    // array of documents
+    repeated CreateDocumentRequest documents = 2;
+}
+
+// BatchInsertDocumentResponse represents a response of batch insert of documents and count of documents inserted
+message BatchInsertDocumentResponse {
+    // the total number of successful insertions
+    int32 insert_count = 1;
+
+    // documents
+    repeated Document documents = 2;
+}
+
 // DocumentService provides document management operations
 service DocumentService {
     rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse) {
@@ -197,6 +215,12 @@ service DocumentService {
     rpc FullTextSearch (FullTextSearchRequest) returns (FullTextSearchResponse) {
         option (google.api.http) = {
             post: "/api/v1/documents/text-search"
+            body: "*"
+        };
+    };
+    rpc BatchInsert (BatchInsertDocumentRequest) returns (BatchInsertDocumentResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents/batch"
             body: "*"
         };
     };

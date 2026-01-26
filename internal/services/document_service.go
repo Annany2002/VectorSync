@@ -329,3 +329,41 @@ func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectio
 
 	return results, nil
 }
+
+// BatchInsert inserts a list of documents inside a collection
+// Returns a list of successfull inserted counts, with the docs and error
+func (s *DocumentService) BatchInsert(ctx context.Context, collectionId string, documents []models.Document) (int, []models.Document, error) {
+	// Validate collection_id
+	if collectionId == "" {
+		return 0, nil, errors.New("collection_id cannot be empty")
+	}
+	// Validate documents not empty
+	if len(documents) == 0 {
+		return 0, nil, errors.New("documents cannot be empty, size must be greater than zero")
+	}
+
+	// Check if collection exists
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return 0, nil, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Since this is an atomic insert, if vector length of any document does not match
+	// the collection's vector dimension, then we reject the whole batch
+	for _, v := range documents {
+		if collection.VectorDimension != len(v.Vector) {
+			return 0, nil, fmt.Errorf("mismatch between vector dimensions of document and collection, expected %d got %d", collection.VectorDimension, len(v.Vector))
+		}
+	}
+
+	// Batch insert the documents
+	insertCount, resultDocs, err := s.documentRepo.BatchInsert(ctx, collectionId, documents)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return insertCount, resultDocs, nil
+}

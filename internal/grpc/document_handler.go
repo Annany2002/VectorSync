@@ -287,6 +287,53 @@ func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSe
 	}, nil
 }
 
+// BatchInsert inserts the documents inside a collection
+func (h *DocumentHandler) BatchInsert(ctx context.Context, req *pb.BatchInsertDocumentRequest) (*pb.BatchInsertDocumentResponse, error) {
+	// Extract the collectionId and the documents
+	collectionId := req.GetCollectionId()
+	protoDocuments := req.GetDocuments()
+
+	// convert the protoDocuments in collection model
+	var convDocuments []models.Document
+
+	// Convert proto CreateDocumentRequest to models.Document
+	for _, v := range protoDocuments {
+		// Convert protobuf Struct to Go map[string]any
+		var metadata map[string]any
+		if v.Metadata != nil {
+			metadata = make(map[string]any)
+			for k, val := range v.Metadata {
+				metadata[k] = val.AsMap()
+			}
+		}
+
+		convDocuments = append(convDocuments, models.Document{
+			CollectionId: collectionId,
+			Content:      v.Content,
+			Vector:       v.Vector,
+			Metadata:     metadata,
+		})
+	}
+
+	// Delegate to service layer for validation and atomic insert
+	docInserts, documents, err := h.documentService.BatchInsert(ctx, collectionId, convDocuments)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert returned models back to proto format for response
+	var protoDocs []*pb.Document
+	for _, v := range documents {
+		protoDocs = append(protoDocs, convertToProtoDocument(&v))
+	}
+
+	// Build and return the gRPC response using helper function
+	return &pb.BatchInsertDocumentResponse{
+		Documents:   protoDocs,
+		InsertCount: int32(docInserts),
+	}, nil
+}
+
 // convertToProtoDocument converts a models.Document to a pb.Document
 func convertToProtoDocument(c *models.Document) *pb.Document {
 	// Convert metadata schema from map[string]any to map[string]*structpb.Struct
@@ -315,5 +362,29 @@ func convertToProtoDocument(c *models.Document) *pb.Document {
 		Content:      c.Content,
 		Vector:       []float32(c.Vector),
 		Metadata:     metadataProto,
+	}
+}
+
+// convertToModelDocument converts a pb.Document to models.Document
+func convertToModelDocument(c *pb.Document) *models.Document {
+	// Convert metadata schema from map[string]*structpb.Struct to map[string]any
+	var metadata map[string]any
+
+	if c.Metadata != nil {
+		metadata = make(map[string]any)
+		for k, v := range c.Metadata {
+			metadata[k] = v
+		}
+	}
+
+	// Build and return the model Colletion message
+	return &models.Document{
+		Id:           c.Id,
+		CreatedAt:    c.CreatedAt.AsTime(),
+		UpdatedAt:    c.UpdatedAt.AsTime(),
+		CollectionId: c.CollectionId,
+		Content:      c.Content,
+		Vector:       []float32(c.Vector),
+		Metadata:     metadata,
 	}
 }

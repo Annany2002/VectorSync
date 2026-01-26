@@ -26,6 +26,7 @@ const (
 	DocumentService_DeleteDocument_FullMethodName  = "/document.DocumentService/DeleteDocument"
 	DocumentService_SearchDocuments_FullMethodName = "/document.DocumentService/SearchDocuments"
 	DocumentService_FullTextSearch_FullMethodName  = "/document.DocumentService/FullTextSearch"
+	DocumentService_BatchInsert_FullMethodName     = "/document.DocumentService/BatchInsert"
 )
 
 // DocumentServiceClient is the client API for DocumentService service.
@@ -41,6 +42,7 @@ type DocumentServiceClient interface {
 	DeleteDocument(ctx context.Context, in *DeleteDocumentRequest, opts ...grpc.CallOption) (*DeleteDocumentResponse, error)
 	SearchDocuments(ctx context.Context, in *SearchDocumentRequest, opts ...grpc.CallOption) (*SearchDocumentResponse, error)
 	FullTextSearch(ctx context.Context, in *FullTextSearchRequest, opts ...grpc.CallOption) (*FullTextSearchResponse, error)
+	BatchInsert(ctx context.Context, in *BatchInsertDocumentRequest, opts ...grpc.CallOption) (*BatchInsertDocumentResponse, error)
 }
 
 type documentServiceClient struct {
@@ -121,6 +123,16 @@ func (c *documentServiceClient) FullTextSearch(ctx context.Context, in *FullText
 	return out, nil
 }
 
+func (c *documentServiceClient) BatchInsert(ctx context.Context, in *BatchInsertDocumentRequest, opts ...grpc.CallOption) (*BatchInsertDocumentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchInsertDocumentResponse)
+	err := c.cc.Invoke(ctx, DocumentService_BatchInsert_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DocumentServiceServer is the server API for DocumentService service.
 // All implementations must embed UnimplementedDocumentServiceServer
 // for forward compatibility.
@@ -134,6 +146,7 @@ type DocumentServiceServer interface {
 	DeleteDocument(context.Context, *DeleteDocumentRequest) (*DeleteDocumentResponse, error)
 	SearchDocuments(context.Context, *SearchDocumentRequest) (*SearchDocumentResponse, error)
 	FullTextSearch(context.Context, *FullTextSearchRequest) (*FullTextSearchResponse, error)
+	BatchInsert(context.Context, *BatchInsertDocumentRequest) (*BatchInsertDocumentResponse, error)
 	mustEmbedUnimplementedDocumentServiceServer()
 }
 
@@ -164,6 +177,9 @@ func (UnimplementedDocumentServiceServer) SearchDocuments(context.Context, *Sear
 }
 func (UnimplementedDocumentServiceServer) FullTextSearch(context.Context, *FullTextSearchRequest) (*FullTextSearchResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FullTextSearch not implemented")
+}
+func (UnimplementedDocumentServiceServer) BatchInsert(context.Context, *BatchInsertDocumentRequest) (*BatchInsertDocumentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchInsert not implemented")
 }
 func (UnimplementedDocumentServiceServer) mustEmbedUnimplementedDocumentServiceServer() {}
 func (UnimplementedDocumentServiceServer) testEmbeddedByValue()                         {}
@@ -312,6 +328,24 @@ func _DocumentService_FullTextSearch_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DocumentService_BatchInsert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchInsertDocumentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DocumentServiceServer).BatchInsert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DocumentService_BatchInsert_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DocumentServiceServer).BatchInsert(ctx, req.(*BatchInsertDocumentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DocumentService_ServiceDesc is the grpc.ServiceDesc for DocumentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +380,10 @@ var DocumentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FullTextSearch",
 			Handler:    _DocumentService_FullTextSearch_Handler,
+		},
+		{
+			MethodName: "BatchInsert",
+			Handler:    _DocumentService_BatchInsert_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

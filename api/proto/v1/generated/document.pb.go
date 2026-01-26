@@ -993,6 +993,116 @@ func (x *FullTextSearchResponse) GetResult() []*SearchResult {
 	return nil
 }
 
+// BatchInsertDocumentRequest represents a batch insert of documents in a collection
+type BatchInsertDocumentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the collection_id
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// array of documents
+	Documents     []*CreateDocumentRequest `protobuf:"bytes,2,rep,name=documents,proto3" json:"documents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchInsertDocumentRequest) Reset() {
+	*x = BatchInsertDocumentRequest{}
+	mi := &file_document_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchInsertDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchInsertDocumentRequest) ProtoMessage() {}
+
+func (x *BatchInsertDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchInsertDocumentRequest.ProtoReflect.Descriptor instead.
+func (*BatchInsertDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *BatchInsertDocumentRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *BatchInsertDocumentRequest) GetDocuments() []*CreateDocumentRequest {
+	if x != nil {
+		return x.Documents
+	}
+	return nil
+}
+
+// BatchInsertDocumentResponse represents a response of batch insert of documents and count of documents inserted
+type BatchInsertDocumentResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the total number of successful insertions
+	InsertCount int32 `protobuf:"varint,1,opt,name=insert_count,json=insertCount,proto3" json:"insert_count,omitempty"`
+	// documents
+	Documents     []*Document `protobuf:"bytes,2,rep,name=documents,proto3" json:"documents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchInsertDocumentResponse) Reset() {
+	*x = BatchInsertDocumentResponse{}
+	mi := &file_document_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchInsertDocumentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchInsertDocumentResponse) ProtoMessage() {}
+
+func (x *BatchInsertDocumentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchInsertDocumentResponse.ProtoReflect.Descriptor instead.
+func (*BatchInsertDocumentResponse) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *BatchInsertDocumentResponse) GetInsertCount() int32 {
+	if x != nil {
+		return x.InsertCount
+	}
+	return 0
+}
+
+func (x *BatchInsertDocumentResponse) GetDocuments() []*Document {
+	if x != nil {
+		return x.Documents
+	}
+	return nil
+}
+
 var File_document_proto protoreflect.FileDescriptor
 
 const file_document_proto_rawDesc = "" +
@@ -1070,7 +1180,13 @@ const file_document_proto_rawDesc = "" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x19\n" +
 	"\bmin_rank\x18\x04 \x01(\x02R\aminRank\"H\n" +
 	"\x16FullTextSearchResponse\x12.\n" +
-	"\x06result\x18\x01 \x03(\v2\x16.document.SearchResultR\x06result2\xc7\x06\n" +
+	"\x06result\x18\x01 \x03(\v2\x16.document.SearchResultR\x06result\"\x80\x01\n" +
+	"\x1aBatchInsertDocumentRequest\x12#\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12=\n" +
+	"\tdocuments\x18\x02 \x03(\v2\x1f.document.CreateDocumentRequestR\tdocuments\"r\n" +
+	"\x1bBatchInsertDocumentResponse\x12!\n" +
+	"\finsert_count\x18\x01 \x01(\x05R\vinsertCount\x120\n" +
+	"\tdocuments\x18\x02 \x03(\v2\x12.document.DocumentR\tdocuments2\xc7\a\n" +
 	"\x0fDocumentService\x12q\n" +
 	"\x0eCreateDocument\x12\x1f.document.CreateDocumentRequest\x1a .document.CreateDocumentResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/documents\x12v\n" +
 	"\x0eUpsertDocument\x12\x1f.document.UpsertDocumentRequest\x1a .document.UpsertDocumentResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/api/v1/documents/{id}\x12m\n" +
@@ -1078,7 +1194,8 @@ const file_document_proto_rawDesc = "" +
 	"\rListDocuments\x12\x1e.document.ListDocumentsRequest\x1a\x1f.document.ListDocumentsResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/documents\x12s\n" +
 	"\x0eDeleteDocument\x12\x1f.document.DeleteDocumentRequest\x1a .document.DeleteDocumentResponse\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/api/v1/documents/{id}\x12y\n" +
 	"\x0fSearchDocuments\x12\x1f.document.SearchDocumentRequest\x1a .document.SearchDocumentResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/documents/search\x12}\n" +
-	"\x0eFullTextSearch\x12\x1f.document.FullTextSearchRequest\x1a .document.FullTextSearchResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/documents/text-searchB:Z8github.com/Annany2002/vector-sync/api/proto/v1/generatedb\x06proto3"
+	"\x0eFullTextSearch\x12\x1f.document.FullTextSearchRequest\x1a .document.FullTextSearchResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/documents/text-search\x12~\n" +
+	"\vBatchInsert\x12$.document.BatchInsertDocumentRequest\x1a%.document.BatchInsertDocumentResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/documents/batchB:Z8github.com/Annany2002/vector-sync/api/proto/v1/generatedb\x06proto3"
 
 var (
 	file_document_proto_rawDescOnce sync.Once
@@ -1092,69 +1209,75 @@ func file_document_proto_rawDescGZIP() []byte {
 	return file_document_proto_rawDescData
 }
 
-var file_document_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_document_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_document_proto_goTypes = []any{
-	(*Document)(nil),               // 0: document.Document
-	(*CreateDocumentRequest)(nil),  // 1: document.CreateDocumentRequest
-	(*CreateDocumentResponse)(nil), // 2: document.CreateDocumentResponse
-	(*ListDocumentRequest)(nil),    // 3: document.ListDocumentRequest
-	(*ListDocumentResponse)(nil),   // 4: document.ListDocumentResponse
-	(*ListDocumentsRequest)(nil),   // 5: document.ListDocumentsRequest
-	(*ListDocumentsResponse)(nil),  // 6: document.ListDocumentsResponse
-	(*DeleteDocumentRequest)(nil),  // 7: document.DeleteDocumentRequest
-	(*DeleteDocumentResponse)(nil), // 8: document.DeleteDocumentResponse
-	(*SearchDocumentRequest)(nil),  // 9: document.SearchDocumentRequest
-	(*SearchResult)(nil),           // 10: document.SearchResult
-	(*SearchDocumentResponse)(nil), // 11: document.SearchDocumentResponse
-	(*UpsertDocumentRequest)(nil),  // 12: document.UpsertDocumentRequest
-	(*UpsertDocumentResponse)(nil), // 13: document.UpsertDocumentResponse
-	(*FullTextSearchRequest)(nil),  // 14: document.FullTextSearchRequest
-	(*FullTextSearchResponse)(nil), // 15: document.FullTextSearchResponse
-	nil,                            // 16: document.Document.MetadataEntry
-	nil,                            // 17: document.CreateDocumentRequest.MetadataEntry
-	nil,                            // 18: document.SearchDocumentRequest.MetadataFilterEntry
-	nil,                            // 19: document.UpsertDocumentRequest.MetadataEntry
-	(*timestamppb.Timestamp)(nil),  // 20: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),        // 21: google.protobuf.Struct
+	(*Document)(nil),                    // 0: document.Document
+	(*CreateDocumentRequest)(nil),       // 1: document.CreateDocumentRequest
+	(*CreateDocumentResponse)(nil),      // 2: document.CreateDocumentResponse
+	(*ListDocumentRequest)(nil),         // 3: document.ListDocumentRequest
+	(*ListDocumentResponse)(nil),        // 4: document.ListDocumentResponse
+	(*ListDocumentsRequest)(nil),        // 5: document.ListDocumentsRequest
+	(*ListDocumentsResponse)(nil),       // 6: document.ListDocumentsResponse
+	(*DeleteDocumentRequest)(nil),       // 7: document.DeleteDocumentRequest
+	(*DeleteDocumentResponse)(nil),      // 8: document.DeleteDocumentResponse
+	(*SearchDocumentRequest)(nil),       // 9: document.SearchDocumentRequest
+	(*SearchResult)(nil),                // 10: document.SearchResult
+	(*SearchDocumentResponse)(nil),      // 11: document.SearchDocumentResponse
+	(*UpsertDocumentRequest)(nil),       // 12: document.UpsertDocumentRequest
+	(*UpsertDocumentResponse)(nil),      // 13: document.UpsertDocumentResponse
+	(*FullTextSearchRequest)(nil),       // 14: document.FullTextSearchRequest
+	(*FullTextSearchResponse)(nil),      // 15: document.FullTextSearchResponse
+	(*BatchInsertDocumentRequest)(nil),  // 16: document.BatchInsertDocumentRequest
+	(*BatchInsertDocumentResponse)(nil), // 17: document.BatchInsertDocumentResponse
+	nil,                                 // 18: document.Document.MetadataEntry
+	nil,                                 // 19: document.CreateDocumentRequest.MetadataEntry
+	nil,                                 // 20: document.SearchDocumentRequest.MetadataFilterEntry
+	nil,                                 // 21: document.UpsertDocumentRequest.MetadataEntry
+	(*timestamppb.Timestamp)(nil),       // 22: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),             // 23: google.protobuf.Struct
 }
 var file_document_proto_depIdxs = []int32{
-	20, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
-	20, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
-	16, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
-	17, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
+	22, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
+	22, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
+	18, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
+	19, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
 	0,  // 4: document.CreateDocumentResponse.document:type_name -> document.Document
 	0,  // 5: document.ListDocumentResponse.document:type_name -> document.Document
 	0,  // 6: document.ListDocumentsResponse.documents:type_name -> document.Document
-	20, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	18, // 8: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
+	22, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	20, // 8: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
 	0,  // 9: document.SearchResult.document:type_name -> document.Document
 	10, // 10: document.SearchDocumentResponse.results:type_name -> document.SearchResult
-	19, // 11: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
+	21, // 11: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
 	0,  // 12: document.UpsertDocumentResponse.document:type_name -> document.Document
 	10, // 13: document.FullTextSearchResponse.result:type_name -> document.SearchResult
-	21, // 14: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
-	21, // 15: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	21, // 16: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
-	21, // 17: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	1,  // 18: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
-	12, // 19: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
-	3,  // 20: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
-	5,  // 21: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
-	7,  // 22: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
-	9,  // 23: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
-	14, // 24: document.DocumentService.FullTextSearch:input_type -> document.FullTextSearchRequest
-	2,  // 25: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
-	13, // 26: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
-	4,  // 27: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
-	6,  // 28: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
-	8,  // 29: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
-	11, // 30: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
-	15, // 31: document.DocumentService.FullTextSearch:output_type -> document.FullTextSearchResponse
-	25, // [25:32] is the sub-list for method output_type
-	18, // [18:25] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	1,  // 14: document.BatchInsertDocumentRequest.documents:type_name -> document.CreateDocumentRequest
+	0,  // 15: document.BatchInsertDocumentResponse.documents:type_name -> document.Document
+	23, // 16: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
+	23, // 17: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	23, // 18: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
+	23, // 19: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	1,  // 20: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
+	12, // 21: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
+	3,  // 22: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
+	5,  // 23: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
+	7,  // 24: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
+	9,  // 25: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
+	14, // 26: document.DocumentService.FullTextSearch:input_type -> document.FullTextSearchRequest
+	16, // 27: document.DocumentService.BatchInsert:input_type -> document.BatchInsertDocumentRequest
+	2,  // 28: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
+	13, // 29: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
+	4,  // 30: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
+	6,  // 31: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
+	8,  // 32: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
+	11, // 33: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
+	15, // 34: document.DocumentService.FullTextSearch:output_type -> document.FullTextSearchResponse
+	17, // 35: document.DocumentService.BatchInsert:output_type -> document.BatchInsertDocumentResponse
+	28, // [28:36] is the sub-list for method output_type
+	20, // [20:28] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_document_proto_init() }
@@ -1168,7 +1291,7 @@ func file_document_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_document_proto_rawDesc), len(file_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

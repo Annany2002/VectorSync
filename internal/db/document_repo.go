@@ -500,3 +500,97 @@ func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query s
 
 	return results, nil
 }
+
+// BatchInsert inserts a group of document inside a colletion
+// For now we will just use one atomic insert operation
+// Later on, we will modify this to handle errors, retries etc
+func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, documents []models.Document) (int, []models.Document, error) {
+	// we will use string builder to efficiently create
+	// strings from many smaller strings and a custom array
+	// of contents to insert each document
+	var (
+		query    strings.Builder
+		contents []any
+	)
+
+	// build the initial query
+	query.WriteString("INSERT INTO documents (collection_id, vector, metadata, content) VALUES")
+
+	for i, v := range documents {
+		idx := i * 4
+		// Convert the vector of the document to string
+		vectorStr := vectorToString(v.Vector)
+
+		// Convert the metadata to []byte
+		metadataJSON, err := json.Marshal(v.Metadata)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to marshal metadata: %w", err)
+		}
+
+		// create a single insert line by line
+		query.WriteString(fmt.Sprintf("($%d, $%d::vector, $%d, $%d)", idx+1, idx+2, idx+3, idx+4))
+
+		// append "," after every line insert
+		if i < len(documents)-1 {
+			query.WriteString(",")
+		}
+
+		// we append each document in the values content to later pass in execCtx function
+		contents = append(contents, v.CollectionId, vectorStr, metadataJSON, v.Content)
+	}
+
+	// add returning statement to return the document
+	query.WriteString("RETURNING id, collection_id, vector, metadata, content, created_at, updated_at")
+
+	// docs represent the documents that are successfully inserted and are returned by query
+	var docs []models.Document
+
+	rows, err := r.db.QueryContext(ctx, query.String(), contents...)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+
+	// scan the rows to extract individual docs
+	for rows.Next() {
+		var doc models.Document
+		var vectorStr string
+		var metadata []byte
+
+		err := rows.Scan(
+			&doc.Id,
+			&doc.CollectionId,
+			&vectorStr,
+			&metadata,
+			&doc.Content,
+			&doc.CreatedAt,
+			&doc.UpdatedAt,
+		)
+
+		if err != nil {
+			return 0, nil, err
+		}
+
+		// Parse vector string back to []float32
+		doc.Vector, err = stringToVector(vectorStr)
+		if err != nil {
+			return 0, nil, err
+		}
+
+		// Parse metadata JSON back to map
+		if len(metadata) > 0 {
+			err = json.Unmarshal(metadata, &doc.Metadata)
+			if err != nil {
+				return 0, nil, err
+			}
+		}
+
+		docs = append(docs, doc)
+	}
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return 0, nil, err
+	}
+
+	return len(docs), docs, nil
+}
