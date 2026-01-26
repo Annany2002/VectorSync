@@ -1,3 +1,6 @@
+# Name of the binary
+BINARY := vectorsync
+
 .PHONY: help all build run dev test format lint fix clean docker-build docker-up docker-down proto migrate-up install-tools
 
 # Show this help message
