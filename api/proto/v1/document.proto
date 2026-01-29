@@ -177,6 +177,25 @@ message BatchInsertDocumentResponse {
     repeated Document documents = 2;
 }
 
+// BatchDeleteDocumentRequest represents a batch deletion of documents in a collection
+message BatchDeleteDocumentRequest {
+    // the collection_id
+    string collection_id = 1;
+
+    // array of documents
+    repeated DeleteDocumentRequest documents = 2;
+}
+
+// BatchDeleteDocumentResponse represents a response of batch delete of documents and count of documents deleted
+message BatchDeleteDocumentResponse {
+    // the total number of deletions
+    int32 deleted_count = 1;
+
+    // documents
+    repeated Document documents = 2;
+}
+
+
 // DocumentService provides document management operations
 service DocumentService {
     rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse) {
@@ -221,6 +240,12 @@ service DocumentService {
     rpc BatchInsert (BatchInsertDocumentRequest) returns (BatchInsertDocumentResponse) {
         option (google.api.http) = {
             post: "/api/v1/documents/batch"
+            body: "*"
+        };
+    };
+    rpc BatchDelete (BatchDeleteDocumentRequest) returns (BatchDeleteDocumentResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents/batch-delete"
             body: "*"
         };
     };
