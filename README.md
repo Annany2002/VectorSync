@@ -19,7 +19,7 @@ VectorSync is a high-performance vector indexing engine designed for enterprise 
 - **Dual API Support** - Native gRPC and HTTP/JSON via grpc-gateway
 - **Collection Management** - Organize embeddings with fixed dimensions
 - **CRUD + Upsert** - Full document operations with atomic upsert
-- **Batch Insert** - Insert multiple documents atomically in a single request
+- **Batch Operations** - Insert and delete multiple documents atomically in a single request
 - **Metadata Filtering** - Rich JSONB-based filtering
 - **Health Checks** - Kubernetes-compatible liveness and readiness probes
 - **Graceful Shutdown** - Proper signal handling and resource cleanup

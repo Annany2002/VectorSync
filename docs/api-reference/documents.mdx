@@ -277,3 +277,74 @@ Insert multiple documents into a collection in a single atomic operation.
 <Warning>
 This is an **atomic operation**. If any document fails validation (e.g., dimension mismatch), the entire batch is rejected and no documents are inserted.
 </Warning>
+
+---
+
+## Batch Delete Documents
+
+Delete multiple documents from a collection in a single atomic operation.
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X POST http://localhost:8080/api/v1/documents/batch-delete \
+      -H "Content-Type: application/json" \
+      -d '{
+        "collection_id": "COLLECTION_ID",
+        "documentIds": [
+          "770e8400-e29b-41d4-a716-446655440001",
+          "770e8400-e29b-41d4-a716-446655440002"
+        ]
+      }'
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{
+      "collection_id": "COLLECTION_ID",
+      "documentIds": [
+        "770e8400-e29b-41d4-a716-446655440001",
+        "770e8400-e29b-41d4-a716-446655440002"
+      ]
+    }' localhost:6309 document.DocumentService/BatchDelete
+    ```
+  </Tab>
+</Tabs>
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `collection_id` | string (UUID) | Yes | Target collection ID |
+| `documentIds` | array[string] | Yes | Array of document IDs to delete (max 1000) |
+
+### Response
+
+```json
+{
+  "deletedCount": 2,
+  "documents": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440001",
+      "createdAt": "2026-01-15T11:00:00Z",
+      "updatedAt": "2026-01-15T11:00:00Z",
+      "collectionId": "COLLECTION_ID",
+      "content": "First document",
+      "vector": [0.1, 0.2, 0.3]
+    },
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "createdAt": "2026-01-15T11:00:00Z",
+      "updatedAt": "2026-01-15T11:00:00Z",
+      "collectionId": "COLLECTION_ID",
+      "content": "Second document",
+      "vector": [0.4, 0.5, 0.6]
+    }
+  ]
+}
+```
+
+<Warning>
+This is an **atomic operation**. All specified documents must belong to the given collection. The operation deletes all documents or none.
+</Warning>
+
