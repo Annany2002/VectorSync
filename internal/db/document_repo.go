@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Annany2002/vector-sync/internal/models"
+	"github.com/lib/pq"
 )
 
 type DocumentRepo struct {
@@ -587,6 +588,71 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 
 		docs = append(docs, doc)
 	}
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return 0, nil, err
+	}
+
+	return len(docs), docs, nil
+}
+
+// BatchDelete deletes a group of documents inside a collection
+// Uses atomic operation with RETURNING to get deleted documents
+func (r *DocumentRepo) BatchDelete(ctx context.Context, collectionId string, documentIds []string) (int, []models.Document, error) {
+	// to efficiently delete multiple rows we use `ANY` to speed up
+	// delete operations compared to using `IN`
+	query := `
+		DELETE FROM documents 
+		WHERE ID = ANY($1::uuid[]) 
+		AND 
+		collection_id = $2
+		RETURNING id, collection_id, vector, metadata, content, created_at, updated_at
+	`
+
+	var docs []models.Document
+
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(documentIds), collectionId)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var doc models.Document
+		var vectorStr string
+		var metadata []byte
+
+		err := rows.Scan(
+			&doc.Id,
+			&doc.CollectionId,
+			&vectorStr,
+			&metadata,
+			&doc.Content,
+			&doc.CreatedAt,
+			&doc.UpdatedAt,
+		)
+
+		if err != nil {
+			return 0, nil, err
+		}
+
+		// Parse vector string back to []float32
+		doc.Vector, err = stringToVector(vectorStr)
+		if err != nil {
+			return 0, nil, err
+		}
+
+		// Parse metadata JSON back to map
+		if len(metadata) > 0 {
+			err = json.Unmarshal(metadata, &doc.Metadata)
+			if err != nil {
+				return 0, nil, err
+			}
+		}
+
+		docs = append(docs, doc)
+	}
+
 	// Check for errors from iterating over rows
 	if err = rows.Err(); err != nil {
 		return 0, nil, err

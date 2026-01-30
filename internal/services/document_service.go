@@ -220,6 +220,11 @@ const (
 	maxTopK     = 1000
 )
 
+// Batch size
+const (
+	batchSize = 1000
+)
+
 // SearchDocuments performs vector similarity search
 // Returns top-K most similar documents with similarity scores
 func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId string, queryVector []float32, topK int32, metadataFilter map[string]any, minThreshold float32) ([]db.SearchResult, error) {
@@ -342,6 +347,11 @@ func (s *DocumentService) BatchInsert(ctx context.Context, collectionId string, 
 		return 0, nil, errors.New("documents cannot be empty, size must be greater than zero")
 	}
 
+	// Check that the current batch size should be less than or equal to the limit
+	if len(documents) > batchSize {
+		return 0, nil, fmt.Errorf("batch size exceeds limit, got:%d, allowed:%d", len(documents), batchSize)
+	}
+
 	// Check if collection exists
 	collection, err := s.collectionRepo.ListById(ctx, collectionId)
 	if err == sql.ErrNoRows {
@@ -366,4 +376,40 @@ func (s *DocumentService) BatchInsert(ctx context.Context, collectionId string, 
 	}
 
 	return insertCount, resultDocs, nil
+}
+
+// BatchDelete deletes a list of documents inside a collection
+// Returns the deleted count, the deleted docs, and error
+func (s *DocumentService) BatchDelete(ctx context.Context, collectionId string, documentIds []string) (int, []models.Document, error) {
+	// Validate collection_id
+	if collectionId == "" {
+		return 0, nil, errors.New("collection_id cannot be empty")
+	}
+	// Validate documentIds not empty
+	if len(documentIds) == 0 {
+		return 0, nil, errors.New("document's ids cannot be empty, size must be greater than zero")
+	}
+
+	// Check that the current batch size should be less than
+	// or equal to the batch size
+	if len(documentIds) > batchSize {
+		return 0, nil, fmt.Errorf("batch size exceeds limit, got:%d, allowed:%d", len(documentIds), batchSize)
+	}
+
+	// Check if collection exists
+	_, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return 0, nil, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Batch delete the documents
+	deletedCount, resultDocs, err := s.documentRepo.BatchDelete(ctx, collectionId, documentIds)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return deletedCount, resultDocs, nil
 }

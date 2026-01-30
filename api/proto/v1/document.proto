@@ -182,8 +182,8 @@ message BatchDeleteDocumentRequest {
     // the collection_id
     string collection_id = 1;
 
-    // array of documents
-    repeated DeleteDocumentRequest documents = 2;
+    // array of document ids
+    repeated string documentIds = 2;
 }
 
 // BatchDeleteDocumentResponse represents a response of batch delete of documents and count of documents deleted

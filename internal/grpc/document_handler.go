@@ -287,7 +287,7 @@ func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSe
 	}, nil
 }
 
-// BatchInsert inserts the documents inside a collection
+// BatchInsert inserts a batch of documents inside a collection
 func (h *DocumentHandler) BatchInsert(ctx context.Context, req *pb.BatchInsertDocumentRequest) (*pb.BatchInsertDocumentResponse, error) {
 	// Extract the collectionId and the documents
 	collectionId := req.GetCollectionId()
@@ -331,6 +331,31 @@ func (h *DocumentHandler) BatchInsert(ctx context.Context, req *pb.BatchInsertDo
 	return &pb.BatchInsertDocumentResponse{
 		Documents:   protoDocs,
 		InsertCount: int32(docInserts),
+	}, nil
+}
+
+// BatchDelete deletes a batch of documents inside a collection
+func (h *DocumentHandler) BatchDelete(ctx context.Context, req *pb.BatchDeleteDocumentRequest) (*pb.BatchDeleteDocumentResponse, error) {
+	// Extract the collectionId and document IDs
+	collectionId := req.GetCollectionId()
+	documentIds := req.GetDocumentIds()
+
+	// Delegate to service layer for validation and atomic delete
+	docDeletes, documents, err := h.documentService.BatchDelete(ctx, collectionId, documentIds)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert returned models back to proto format for response
+	var protoDocs []*pb.Document
+	for _, v := range documents {
+		protoDocs = append(protoDocs, convertToProtoDocument(&v))
+	}
+
+	// Build and return the gRPC response using helper function
+	return &pb.BatchDeleteDocumentResponse{
+		Documents:    protoDocs,
+		DeletedCount: int32(docDeletes),
 	}, nil
 }
 

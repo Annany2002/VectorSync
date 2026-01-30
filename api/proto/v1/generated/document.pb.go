@@ -1108,8 +1108,8 @@ type BatchDeleteDocumentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// the collection_id
 	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
-	// array of documents
-	Documents     []*DeleteDocumentRequest `protobuf:"bytes,2,rep,name=documents,proto3" json:"documents,omitempty"`
+	// array of document ids
+	DocumentIds   []string `protobuf:"bytes,2,rep,name=documentIds,proto3" json:"documentIds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1151,9 +1151,9 @@ func (x *BatchDeleteDocumentRequest) GetCollectionId() string {
 	return ""
 }
 
-func (x *BatchDeleteDocumentRequest) GetDocuments() []*DeleteDocumentRequest {
+func (x *BatchDeleteDocumentRequest) GetDocumentIds() []string {
 	if x != nil {
-		return x.Documents
+		return x.DocumentIds
 	}
 	return nil
 }
@@ -1296,10 +1296,10 @@ const file_document_proto_rawDesc = "" +
 	"\tdocuments\x18\x02 \x03(\v2\x1f.document.CreateDocumentRequestR\tdocuments\"r\n" +
 	"\x1bBatchInsertDocumentResponse\x12!\n" +
 	"\finsert_count\x18\x01 \x01(\x05R\vinsertCount\x120\n" +
-	"\tdocuments\x18\x02 \x03(\v2\x12.document.DocumentR\tdocuments\"\x80\x01\n" +
+	"\tdocuments\x18\x02 \x03(\v2\x12.document.DocumentR\tdocuments\"c\n" +
 	"\x1aBatchDeleteDocumentRequest\x12#\n" +
-	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12=\n" +
-	"\tdocuments\x18\x02 \x03(\v2\x1f.document.DeleteDocumentRequestR\tdocuments\"t\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12 \n" +
+	"\vdocumentIds\x18\x02 \x03(\tR\vdocumentIds\"t\n" +
 	"\x1bBatchDeleteDocumentResponse\x12#\n" +
 	"\rdeleted_count\x18\x01 \x01(\x05R\fdeletedCount\x120\n" +
 	"\tdocuments\x18\x02 \x03(\v2\x12.document.DocumentR\tdocuments2\xcf\b\n" +
@@ -1372,35 +1372,34 @@ var file_document_proto_depIdxs = []int32{
 	10, // 13: document.FullTextSearchResponse.result:type_name -> document.SearchResult
 	1,  // 14: document.BatchInsertDocumentRequest.documents:type_name -> document.CreateDocumentRequest
 	0,  // 15: document.BatchInsertDocumentResponse.documents:type_name -> document.Document
-	7,  // 16: document.BatchDeleteDocumentRequest.documents:type_name -> document.DeleteDocumentRequest
-	0,  // 17: document.BatchDeleteDocumentResponse.documents:type_name -> document.Document
-	25, // 18: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
-	25, // 19: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	25, // 20: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
-	25, // 21: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	1,  // 22: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
-	12, // 23: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
-	3,  // 24: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
-	5,  // 25: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
-	7,  // 26: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
-	9,  // 27: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
-	14, // 28: document.DocumentService.FullTextSearch:input_type -> document.FullTextSearchRequest
-	16, // 29: document.DocumentService.BatchInsert:input_type -> document.BatchInsertDocumentRequest
-	18, // 30: document.DocumentService.BatchDelete:input_type -> document.BatchDeleteDocumentRequest
-	2,  // 31: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
-	13, // 32: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
-	4,  // 33: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
-	6,  // 34: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
-	8,  // 35: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
-	11, // 36: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
-	15, // 37: document.DocumentService.FullTextSearch:output_type -> document.FullTextSearchResponse
-	17, // 38: document.DocumentService.BatchInsert:output_type -> document.BatchInsertDocumentResponse
-	19, // 39: document.DocumentService.BatchDelete:output_type -> document.BatchDeleteDocumentResponse
-	31, // [31:40] is the sub-list for method output_type
-	22, // [22:31] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	0,  // 16: document.BatchDeleteDocumentResponse.documents:type_name -> document.Document
+	25, // 17: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
+	25, // 18: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	25, // 19: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
+	25, // 20: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	1,  // 21: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
+	12, // 22: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
+	3,  // 23: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
+	5,  // 24: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
+	7,  // 25: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
+	9,  // 26: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
+	14, // 27: document.DocumentService.FullTextSearch:input_type -> document.FullTextSearchRequest
+	16, // 28: document.DocumentService.BatchInsert:input_type -> document.BatchInsertDocumentRequest
+	18, // 29: document.DocumentService.BatchDelete:input_type -> document.BatchDeleteDocumentRequest
+	2,  // 30: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
+	13, // 31: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
+	4,  // 32: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
+	6,  // 33: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
+	8,  // 34: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
+	11, // 35: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
+	15, // 36: document.DocumentService.FullTextSearch:output_type -> document.FullTextSearchResponse
+	17, // 37: document.DocumentService.BatchInsert:output_type -> document.BatchInsertDocumentResponse
+	19, // 38: document.DocumentService.BatchDelete:output_type -> document.BatchDeleteDocumentResponse
+	30, // [30:39] is the sub-list for method output_type
+	21, // [21:30] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_document_proto_init() }
