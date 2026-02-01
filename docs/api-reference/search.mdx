@@ -1,6 +1,6 @@
 ---
 title: Search
-description: 'Vector similarity and full-text search endpoints'
+description: 'Vector similarity, full-text, and hybrid search endpoints'
 ---
 
 ## Search Documents
@@ -218,10 +218,96 @@ Full-text search uses PostgreSQL's `to_tsvector` and `plainto_tsquery` for match
 
 ---
 
+## Hybrid Search
+
+Combine vector similarity and full-text search with weighted scoring. This is the most powerful search mode, allowing you to balance semantic meaning (vectors) with keyword relevance (text).
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X POST http://localhost:8080/api/v1/documents/hybrid-search \
+      -H "Content-Type: application/json" \
+      -d '{
+        "collection_id": "COLLECTION_ID",
+        "query_vector": [0.15, 0.22, 0.31],
+        "query_text": "database search",
+        "top_k": 10,
+        "vector_weight": 0.7,
+        "text_weight": 0.3
+      }'
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{
+      "collection_id": "COLLECTION_ID",
+      "query_vector": [0.15, 0.22, 0.31],
+      "query_text": "database search",
+      "top_k": 10,
+      "vector_weight": 0.7,
+      "text_weight": 0.3
+    }' localhost:6309 document.DocumentService/HybridSearch
+    ```
+  </Tab>
+</Tabs>
+
+### Request Body
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `collection_id` | string (UUID) | Yes | - | Collection to search in |
+| `query_vector` | array[float] | No* | - | Query vector for similarity search |
+| `query_text` | string | No* | - | Query text for full-text search |
+| `top_k` | integer | No | 10 | Number of results (max 1000) |
+| `metadata` | object | No | - | Filter results by metadata |
+| `vector_weight` | float | No | 0.5 | Weight for vector score (0.0-1.0) |
+| `text_weight` | float | No | 0.5 | Weight for text score (0.0-1.0) |
+| `include_vector` | boolean | No | false | Include vectors in response |
+
+<Note>
+*At least one of `query_vector` or `query_text` is required. Weights are automatically normalized to sum to 1.0.
+</Note>
+
+### Response
+
+```json
+{
+  "results": [
+    {
+      "document": {
+        "id": "770e8400-e29b-41d4-a716-446655440002",
+        "content": "PostgreSQL database with vector search",
+        "metadata": {}
+      },
+      "score": 0.8234
+    }
+  ]
+}
+```
+
+<Info>
+The `score` is a weighted combination: `(text_weight * text_rank) + (vector_weight * cosine_similarity)`.
+</Info>
+
+---
+
+## Hybrid Search Use Cases
+
+| Use Case | Vector Weight | Text Weight | Why |
+|----------|---------------|-------------|-----|
+| Semantic search | 0.8 | 0.2 | Prioritize meaning over keywords |
+| Keyword-heavy | 0.2 | 0.8 | Prioritize exact term matches |
+| Balanced | 0.5 | 0.5 | Equal importance to both |
+| Vector-only | 1.0 | 0.0 | Pure vector similarity |
+
+---
+
 ## Best Practices
 
 1. **Start with small top_k** - Use `top_k=10` initially, increase as needed
 2. **Use metadata filters** - Pre-filter with metadata for better performance
 3. **Exclude vectors** - Set `include_vector: false` to reduce response size
 4. **Set thresholds wisely** - Use `min_threshold` to filter low-quality matches
-5. **Combine search types** - Use vector search for semantic similarity, full-text for keyword matching
+5. **Use hybrid search** - Combine vector and text search for best results
+6. **Tune weights** - Experiment with `vector_weight` and `text_weight` for your use case
+

@@ -16,6 +16,7 @@ VectorSync is a high-performance vector indexing engine designed for enterprise 
 
 - **Vector Similarity Search** - Cosine similarity with configurable top-K results
 - **Full-Text Search** - Keyword search on document content using PostgreSQL tsvector
+- **Hybrid Search** - Combine vector similarity and full-text search with weighted scoring
 - **Dual API Support** - Native gRPC and HTTP/JSON via grpc-gateway
 - **Collection Management** - Organize embeddings with fixed dimensions
 - **CRUD + Upsert** - Full document operations with atomic upsert
@@ -63,7 +64,20 @@ curl -X POST http://localhost:8080/api/v1/documents/text-search \
     "query": "sample document",
     "limit": 10
   }'
+
+# Hybrid search (vector + text combined)
+curl -X POST http://localhost:8080/api/v1/documents/hybrid-search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "YOUR_COLLECTION_ID",
+    "query_vector": [0.1, 0.2, 0.3, ...],
+    "query_text": "sample document",
+    "top_k": 10,
+    "vector_weight": 0.7,
+    "text_weight": 0.3
+  }'
 ```
+
 
 ## Documentation
 
