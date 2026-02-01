@@ -28,6 +28,7 @@ const (
 	DocumentService_FullTextSearch_FullMethodName  = "/document.DocumentService/FullTextSearch"
 	DocumentService_BatchInsert_FullMethodName     = "/document.DocumentService/BatchInsert"
 	DocumentService_BatchDelete_FullMethodName     = "/document.DocumentService/BatchDelete"
+	DocumentService_HybridSearch_FullMethodName    = "/document.DocumentService/HybridSearch"
 )
 
 // DocumentServiceClient is the client API for DocumentService service.
@@ -45,6 +46,7 @@ type DocumentServiceClient interface {
 	FullTextSearch(ctx context.Context, in *FullTextSearchRequest, opts ...grpc.CallOption) (*FullTextSearchResponse, error)
 	BatchInsert(ctx context.Context, in *BatchInsertDocumentRequest, opts ...grpc.CallOption) (*BatchInsertDocumentResponse, error)
 	BatchDelete(ctx context.Context, in *BatchDeleteDocumentRequest, opts ...grpc.CallOption) (*BatchDeleteDocumentResponse, error)
+	HybridSearch(ctx context.Context, in *HybridSearchRequest, opts ...grpc.CallOption) (*HybridSearchResponse, error)
 }
 
 type documentServiceClient struct {
@@ -145,6 +147,16 @@ func (c *documentServiceClient) BatchDelete(ctx context.Context, in *BatchDelete
 	return out, nil
 }
 
+func (c *documentServiceClient) HybridSearch(ctx context.Context, in *HybridSearchRequest, opts ...grpc.CallOption) (*HybridSearchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HybridSearchResponse)
+	err := c.cc.Invoke(ctx, DocumentService_HybridSearch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DocumentServiceServer is the server API for DocumentService service.
 // All implementations must embed UnimplementedDocumentServiceServer
 // for forward compatibility.
@@ -160,6 +172,7 @@ type DocumentServiceServer interface {
 	FullTextSearch(context.Context, *FullTextSearchRequest) (*FullTextSearchResponse, error)
 	BatchInsert(context.Context, *BatchInsertDocumentRequest) (*BatchInsertDocumentResponse, error)
 	BatchDelete(context.Context, *BatchDeleteDocumentRequest) (*BatchDeleteDocumentResponse, error)
+	HybridSearch(context.Context, *HybridSearchRequest) (*HybridSearchResponse, error)
 	mustEmbedUnimplementedDocumentServiceServer()
 }
 
@@ -196,6 +209,9 @@ func (UnimplementedDocumentServiceServer) BatchInsert(context.Context, *BatchIns
 }
 func (UnimplementedDocumentServiceServer) BatchDelete(context.Context, *BatchDeleteDocumentRequest) (*BatchDeleteDocumentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchDelete not implemented")
+}
+func (UnimplementedDocumentServiceServer) HybridSearch(context.Context, *HybridSearchRequest) (*HybridSearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method HybridSearch not implemented")
 }
 func (UnimplementedDocumentServiceServer) mustEmbedUnimplementedDocumentServiceServer() {}
 func (UnimplementedDocumentServiceServer) testEmbeddedByValue()                         {}
@@ -380,6 +396,24 @@ func _DocumentService_BatchDelete_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DocumentService_HybridSearch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HybridSearchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DocumentServiceServer).HybridSearch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DocumentService_HybridSearch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DocumentServiceServer).HybridSearch(ctx, req.(*HybridSearchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DocumentService_ServiceDesc is the grpc.ServiceDesc for DocumentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -422,6 +456,10 @@ var DocumentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchDelete",
 			Handler:    _DocumentService_BatchDelete_Handler,
+		},
+		{
+			MethodName: "HybridSearch",
+			Handler:    _DocumentService_HybridSearch_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

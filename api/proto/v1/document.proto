@@ -195,6 +195,29 @@ message BatchDeleteDocumentResponse {
     repeated Document documents = 2;
 }
 
+// HybridSearchRequest represents a request for performing hybrid search on collection
+message HybridSearchRequest{
+    // colletion id
+    string collection_id = 1;
+    // the query vector for vector search
+    repeated float query_vector = 2;
+    // the query required for full text search
+    string query_text = 3;
+    // the number of returned results
+    int32 top_k = 4;
+    // the optional metadata required for metadata filtering
+    map<string, google.protobuf.Struct> metadata = 5;
+    // Weight for vector score (0.0-1.0)
+    float vector_weight = 6; 
+    // Weight for text score (0.0-1.0)
+    float text_weight = 7;
+    bool include_vector = 8;
+}
+
+// HybridSearchResponse represents a response for hybrid search on collection
+message HybridSearchResponse{
+    repeated SearchResult results = 1;
+}
 
 // DocumentService provides document management operations
 service DocumentService {
@@ -246,6 +269,12 @@ service DocumentService {
     rpc BatchDelete (BatchDeleteDocumentRequest) returns (BatchDeleteDocumentResponse) {
         option (google.api.http) = {
             post: "/api/v1/documents/batch-delete"
+            body: "*"
+        };
+    };
+    rpc HybridSearch (HybridSearchRequest) returns (HybridSearchResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents/hybrid-search"
             body: "*"
         };
     };
