@@ -413,3 +413,89 @@ func (s *DocumentService) BatchDelete(ctx context.Context, collectionId string, 
 
 	return deletedCount, resultDocs, nil
 }
+
+// HybridSearchDocuments performs combined vector similarity and full-text search
+// Returns top-K results ordered by weighted combined score
+func (s *DocumentService) HybridSearchDocuments(ctx context.Context, collectionId, queryText string, queryVector []float32, topK int32, metadataFilter map[string]any, vectorWeight, textWeight float32, includeVector bool) ([]db.SearchResult, error) {
+	// Validate collection_id
+	if collectionId == "" {
+		return nil, errors.New("collection_id is required")
+	}
+
+	// Validate at least one search method is provided
+	if len(queryVector) == 0 && queryText == "" {
+		return nil, errors.New("at least one of query_vector or query_text is required")
+	}
+
+	// Check if collection exists and validate vector dimension
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Validate vector dimension matches collection (if vector provided)
+	if len(queryVector) > 0 && len(queryVector) != collection.VectorDimension {
+		return nil, fmt.Errorf(
+			"query vector dimension mismatch: collection expects %d dimensions, got %d",
+			collection.VectorDimension,
+			len(queryVector),
+		)
+	}
+
+	// Validate query vector values (no NaN or Infinity)
+	for i, val := range queryVector {
+		if math.IsNaN(float64(val)) {
+			return nil, fmt.Errorf("query vector contains NaN at index %d", i)
+		}
+		if math.IsInf(float64(val), 0) {
+			return nil, fmt.Errorf("query vector contains Infinity at index %d", i)
+		}
+	}
+
+	// Validate and normalize top_k
+	if topK < 0 {
+		return nil, errors.New("top_k cannot be negative")
+	}
+	if topK == 0 {
+		topK = defaultTopK
+	}
+	if topK > maxTopK {
+		return nil, fmt.Errorf("top_k cannot exceed %d", maxTopK)
+	}
+
+	// Validate weights (must be between 0.0 and 1.0)
+	if vectorWeight < 0.0 || vectorWeight > 1.0 {
+		return nil, errors.New("vector_weight must be between 0.0 and 1.0")
+	}
+	if textWeight < 0.0 || textWeight > 1.0 {
+		return nil, errors.New("text_weight must be between 0.0 and 1.0")
+	}
+
+	// Normalize weights to sum to 1.0
+	if vectorWeight == 0 && textWeight == 0 {
+		vectorWeight = 0.5
+		textWeight = 0.5
+	} else {
+		sum := vectorWeight + textWeight
+		if sum > 0 {
+			vectorWeight = vectorWeight / sum
+			textWeight = textWeight / sum
+		}
+	}
+
+	// Initialize metadata filter if nil
+	if metadataFilter == nil {
+		metadataFilter = make(map[string]any)
+	}
+
+	// Perform hybrid search via repository
+	results, err := s.documentRepo.HybridSearch(ctx, collectionId, queryText, queryVector, int(topK), metadataFilter, vectorWeight, textWeight, includeVector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform hybrid search: %w", err)
+	}
+
+	return results, nil
+}

@@ -197,7 +197,7 @@ message BatchDeleteDocumentResponse {
 
 // HybridSearchRequest represents a request for performing hybrid search on collection
 message HybridSearchRequest{
-    // colletion id
+    // the colletion_id
     string collection_id = 1;
     // the query vector for vector search
     repeated float query_vector = 2;

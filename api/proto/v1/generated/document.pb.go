@@ -1216,7 +1216,7 @@ func (x *BatchDeleteDocumentResponse) GetDocuments() []*Document {
 // HybridSearchRequest represents a request for performing hybrid search on collection
 type HybridSearchRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// colletion id
+	// the colletion_id
 	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
 	// the query vector for vector search
 	QueryVector []float32 `protobuf:"fixed32,2,rep,packed,name=query_vector,json=queryVector,proto3" json:"query_vector,omitempty"`

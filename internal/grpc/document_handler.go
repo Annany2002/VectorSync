@@ -413,3 +413,68 @@ func convertToModelDocument(c *pb.Document) *models.Document {
 		Metadata:     metadata,
 	}
 }
+
+// HybridSearch performs combined vector similarity and full-text search
+func (h *DocumentHandler) HybridSearch(ctx context.Context, req *pb.HybridSearchRequest) (*pb.HybridSearchResponse, error) {
+	// Extract fields from request
+	collectionId := req.GetCollectionId()
+	queryVector := req.GetQueryVector()
+	queryText := req.GetQueryText()
+	topK := req.GetTopK()
+	vectorWeight := req.GetVectorWeight()
+	textWeight := req.GetTextWeight()
+	includeVector := req.GetIncludeVector()
+	metadataFilter := req.GetMetadata()
+
+	// Basic validation
+	if collectionId == "" {
+		return nil, errors.New("collection_id cannot be empty")
+	}
+	if len(queryVector) == 0 && queryText == "" {
+		return nil, errors.New("at least one of query_vector or query_text is required")
+	}
+
+	// Default top_k if not provided
+	if topK == 0 {
+		topK = 10
+	}
+
+	// Convert protobuf metadata filter to map[string]any
+	var metadataFilterMap map[string]any
+	if len(metadataFilter) > 0 {
+		metadataFilterMap = make(map[string]any)
+		for key, value := range metadataFilter {
+			metadataFilterMap[key] = value.AsMap()
+		}
+	}
+
+	// Call service layer to perform hybrid search
+	searchResults, err := h.documentService.HybridSearchDocuments(
+		ctx,
+		collectionId,
+		queryText,
+		queryVector,
+		topK,
+		metadataFilterMap,
+		vectorWeight,
+		textWeight,
+		includeVector,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert db.SearchResult slice to pb.SearchResult slice
+	pbResults := make([]*pb.SearchResult, len(searchResults))
+	for i, result := range searchResults {
+		pbDoc := convertToProtoDocument(&result.Document)
+		pbResults[i] = &pb.SearchResult{
+			Document: pbDoc,
+			Score:    result.Score,
+		}
+	}
+
+	return &pb.HybridSearchResponse{
+		Results: pbResults,
+	}, nil
+}

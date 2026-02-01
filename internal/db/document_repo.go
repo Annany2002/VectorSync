@@ -660,3 +660,136 @@ func (r *DocumentRepo) BatchDelete(ctx context.Context, collectionId string, doc
 
 	return len(docs), docs, nil
 }
+
+// HybridSearch performs a combined vector similarity and full-text search
+// Returns top-K results ordered by weighted combined score (highest first)
+// Score = (textWeight * fts_rank) + (vectorWeight * cosine_similarity)
+// Supports optional metadata filtering via JSONB containment
+func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText string, queryVector []float32, topK int, metadataFilter map[string]any, vectorWeight, textWeight float32, includeVector bool) ([]SearchResult, error) {
+	// Convert query vector to PostgreSQL format
+	vectorStr := vectorToString(queryVector)
+
+	// Build CTE that computes both scores for each matching document:
+	// - fts_score: PostgreSQL ts_rank for full-text relevance (0 if no text query)
+	// - vector_score: cosine similarity (1 - cosine_distance)
+	// Text filter is only applied when queryText is provided
+	var hybrid string
+	var args []any
+	var argIndex int
+
+	if queryText != "" {
+		// Both text and vector search
+		hybrid = `
+		WITH scored AS (
+			SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+				ts_rank(to_tsvector('english', COALESCE(content, '')),
+				plainto_tsquery('english', $1)) as fts_score,
+				1 - (vector <=> $3::vector) AS vector_score
+			FROM documents
+			WHERE collection_id = $2 
+				AND to_tsvector('english', COALESCE(content, ''))
+					@@ plainto_tsquery('english', $1)
+		`
+		args = []any{queryText, collectionId, vectorStr}
+		argIndex = 4
+	} else {
+		// Vector-only search (no text filter)
+		hybrid = `
+		WITH scored AS (
+			SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+				0::float as fts_score,
+				1 - (vector <=> $2::vector) AS vector_score
+			FROM documents
+			WHERE collection_id = $1
+		`
+		args = []any{collectionId, vectorStr}
+		argIndex = 3
+	}
+
+	// Add metadata filtering if provided
+	if len(metadataFilter) > 0 {
+		for key, value := range metadataFilter {
+			// Use JSONB containment operator @> for metadata filtering
+			hybrid += fmt.Sprintf(" AND metadata @> $%d::jsonb", argIndex)
+
+			// Convert single key-value to JSONB format
+			filterJSON, err := json.Marshal(map[string]any{key: value})
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal metadata filter: %w", err)
+			}
+			args = append(args, filterJSON)
+			argIndex++
+		}
+	}
+
+	// Close CTE and compute weighted combined score for final ordering
+	hybrid += fmt.Sprintf(`
+)
+SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+    ($%d * fts_score) + ($%d * vector_score) AS combined_score
+FROM scored
+ORDER BY combined_score DESC
+LIMIT $%d
+`, argIndex, argIndex+1, argIndex+2)
+
+	args = append(args, textWeight, vectorWeight, topK)
+
+	// Execute query
+	rows, err := r.db.QueryContext(ctx, hybrid, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute search query: %w", err)
+	}
+	defer rows.Close()
+
+	var results []SearchResult
+
+	// Scan all rows
+	for rows.Next() {
+		var result SearchResult
+		var vectorStrReturned string
+		var metadataBytes []byte
+
+		err = rows.Scan(
+			&result.Document.Id,
+			&result.Document.CollectionId,
+			&vectorStrReturned,
+			&metadataBytes,
+			&result.Document.Content,
+			&result.Document.CreatedAt,
+			&result.Document.UpdatedAt,
+			&result.Score,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan search result: %w", err)
+		}
+
+		// Parse vector string back to []float32
+		result.Document.Vector, err = stringToVector(vectorStrReturned)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+		}
+
+		// Parse metadata JSON back to map
+		if len(metadataBytes) > 0 {
+			err = json.Unmarshal(metadataBytes, &result.Document.Metadata)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+			}
+		}
+
+		// Exclude vector from response to reduce payload size
+		if !includeVector {
+			result.Document.Vector = nil
+		}
+
+		results = append(results, result)
+	}
+
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating search results: %w", err)
+	}
+
+	return results, nil
+
+}
