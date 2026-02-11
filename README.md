@@ -25,6 +25,19 @@ VectorSync is a high-performance vector indexing engine designed for enterprise 
 - **Health Checks** - Kubernetes-compatible liveness and readiness probes
 - **Graceful Shutdown** - Proper signal handling and resource cleanup
 
+## Performance
+
+Benchmarked with 768-dimension vectors on PostgreSQL with pgvector:
+
+| Operation | Throughput | Avg Latency |
+|-----------|-----------|-------------|
+| Single Insert | ~6 ops/sec | ~164ms |
+| Batch Insert (100 docs) | ~64 docs/sec | ~1.6s per batch |
+| Upsert (new) | ~6 ops/sec | ~159ms |
+| Upsert (update) | ~5 ops/sec | ~205ms |
+
+Write operations use in-memory collection caching and optimized vector serialization to minimize overhead. Response payloads for writes exclude vector data, reducing transfer size by ~3KB per document.
+
 ## Quick Start
 
 ```bash

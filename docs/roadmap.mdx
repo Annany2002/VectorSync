@@ -43,6 +43,11 @@ VectorSync is currently in alpha with core vector database functionality complet
 
 ## v0.2.0: Performance & Scalability
 
+### Write Optimizations (Completed)
+- Lightweight write responses -- vector data excluded from insert/upsert/batch responses
+- In-memory collection cache with dimension lookups to skip repeated DB roundtrips
+- Optimized vector serialization using `strconv` and `strings.Builder`
+
 ### Approximate Nearest Neighbor (ANN) Search
 - HNSW index implementation using pgvector
 - IVFFlat index support
