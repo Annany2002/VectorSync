@@ -13,16 +13,40 @@ import (
 
 // DocumentService is the service for document operations
 type DocumentService struct {
-	documentRepo   db.DocumentRepo
-	collectionRepo db.CollectionRepo
+	documentRepo    db.DocumentRepo
+	collectionRepo  db.CollectionRepo
+	collectionCache *db.CollectionCache
 }
 
 // NewDocumentService creates a new document service
-func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.CollectionRepo) *DocumentService {
+func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.CollectionRepo, collectionCache *db.CollectionCache) *DocumentService {
 	return &DocumentService{
-		documentRepo:   documentRepo,
-		collectionRepo: collectionRepo,
+		documentRepo:    documentRepo,
+		collectionRepo:  collectionRepo,
+		collectionCache: collectionCache,
 	}
+}
+
+// getCollectionDimension returns the vector dimension for a collection,
+// using the cache to avoid repeated DB lookups.
+func (s *DocumentService) getCollectionDimension(ctx context.Context, collectionId string) (int, error) {
+	// Check cache first
+	if dim, ok := s.collectionCache.GetDimension(collectionId); ok {
+		return int(dim), nil
+	}
+
+	// Cache miss: query DB
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return 0, fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	// Populate cache for future calls
+	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension))
+	return collection.VectorDimension, nil
 }
 
 // CreateDocument creates a new document
@@ -38,20 +62,17 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionId, cont
 		metadata = make(map[string]any)
 	}
 
-	// Collection exists (and fetch it for dimension validation)
-	collection, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Validate collection exists and get dimension (uses cache)
+	dimension, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return nil, err
 	}
 
 	// Vector dimension matches collection's expected dimension
-	if len(vector) != collection.VectorDimension {
+	if len(vector) != dimension {
 		return nil, fmt.Errorf(
 			"vector dimension mismatch: collection expects %d dimensions, got %d",
-			collection.VectorDimension,
+			dimension,
 			len(vector),
 		)
 	}
@@ -91,20 +112,17 @@ func (s *DocumentService) UpsertDocument(ctx context.Context, documentId, collec
 		metadata = make(map[string]any)
 	}
 
-	// Check if collection exists (and fetch it for dimension validation)
-	collection, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Validate collection exists and get dimension (uses cache)
+	dimension, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return nil, err
 	}
 
 	// Vector dimension matches collection's expected dimension
-	if len(vector) != collection.VectorDimension {
+	if len(vector) != dimension {
 		return nil, fmt.Errorf(
 			"vector dimension mismatch: collection expects %d dimensions, got %d",
-			collection.VectorDimension,
+			dimension,
 			len(vector),
 		)
 	}
@@ -238,20 +256,17 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 		return nil, errors.New("query_vector cannot be empty")
 	}
 
-	// Check if collection exists and validate vector dimension
-	collection, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Validate collection exists and get dimension (uses cache)
+	dimension, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return nil, err
 	}
 
 	// Validate vector dimension matches collection
-	if len(queryVector) != collection.VectorDimension {
+	if len(queryVector) != dimension {
 		return nil, fmt.Errorf(
 			"query vector dimension mismatch: collection expects %d dimensions, got %d",
-			collection.VectorDimension,
+			dimension,
 			len(queryVector),
 		)
 	}
@@ -352,20 +367,17 @@ func (s *DocumentService) BatchInsert(ctx context.Context, collectionId string, 
 		return 0, nil, fmt.Errorf("batch size exceeds limit, got:%d, allowed:%d", len(documents), batchSize)
 	}
 
-	// Check if collection exists
-	collection, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return 0, nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Validate collection exists and get dimension (uses cache)
+	dimension, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return 0, nil, err
 	}
 
 	// Since this is an atomic insert, if vector length of any document does not match
 	// the collection's vector dimension, then we reject the whole batch
 	for _, v := range documents {
-		if collection.VectorDimension != len(v.Vector) {
-			return 0, nil, fmt.Errorf("mismatch between vector dimensions of document and collection, expected %d got %d", collection.VectorDimension, len(v.Vector))
+		if dimension != len(v.Vector) {
+			return 0, nil, fmt.Errorf("mismatch between vector dimensions of document and collection, expected %d got %d", dimension, len(v.Vector))
 		}
 	}
 
@@ -427,20 +439,17 @@ func (s *DocumentService) HybridSearchDocuments(ctx context.Context, collectionI
 		return nil, errors.New("at least one of query_vector or query_text is required")
 	}
 
-	// Check if collection exists and validate vector dimension
-	collection, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Validate collection exists and get dimension (uses cache)
+	dimension, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return nil, err
 	}
 
 	// Validate vector dimension matches collection (if vector provided)
-	if len(queryVector) > 0 && len(queryVector) != collection.VectorDimension {
+	if len(queryVector) > 0 && len(queryVector) != dimension {
 		return nil, fmt.Errorf(
 			"query vector dimension mismatch: collection expects %d dimensions, got %d",
-			collection.VectorDimension,
+			dimension,
 			len(queryVector),
 		)
 	}

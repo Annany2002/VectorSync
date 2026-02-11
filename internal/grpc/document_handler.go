@@ -48,9 +48,11 @@ func (h *DocumentHandler) CreateDocument(ctx context.Context, req *pb.CreateDocu
 		return nil, err
 	}
 
-	// Build and return the gRPC response using helper function
+	// Build and return the gRPC response
 	return &pb.CreateDocumentResponse{
-		Document: convertToProtoDocument(document),
+		Id:        document.Id,
+		CreatedAt: timestamppb.New(document.CreatedAt),
+		UpdatedAt: timestamppb.New(document.UpdatedAt),
 	}, nil
 }
 
@@ -79,8 +81,10 @@ func (h *DocumentHandler) UpsertDocument(ctx context.Context, req *pb.UpsertDocu
 
 	// Build and return the gRPC response
 	return &pb.UpsertDocumentResponse{
-		Document: convertToProtoDocument(result.Document),
-		IsNew:    result.IsNew,
+		Id:        result.Document.Id,
+		IsNew:     result.IsNew,
+		CreatedAt: timestamppb.New(result.Document.CreatedAt),
+		UpdatedAt: timestamppb.New(result.Document.UpdatedAt),
 	}, nil
 }
 
@@ -321,15 +325,15 @@ func (h *DocumentHandler) BatchInsert(ctx context.Context, req *pb.BatchInsertDo
 		return nil, err
 	}
 
-	// Convert returned models back to proto format for response
-	var protoDocs []*pb.Document
+	// Collect document ids for theresponse
+	var docIds []string
 	for _, v := range documents {
-		protoDocs = append(protoDocs, convertToProtoDocument(&v))
+		docIds = append(docIds, v.Id)
 	}
 
-	// Build and return the gRPC response using helper function
+	// Build and return the gRPC response
 	return &pb.BatchInsertDocumentResponse{
-		Documents:   protoDocs,
+		DocumentIds: docIds,
 		InsertCount: int32(docInserts),
 	}, nil
 }
@@ -346,15 +350,15 @@ func (h *DocumentHandler) BatchDelete(ctx context.Context, req *pb.BatchDeleteDo
 		return nil, err
 	}
 
-	// Convert returned models back to proto format for response
-	var protoDocs []*pb.Document
+	// Collect document ids for the response
+	var docIds []string
 	for _, v := range documents {
-		protoDocs = append(protoDocs, convertToProtoDocument(&v))
+		docIds = append(docIds, v.Id)
 	}
 
-	// Build and return the gRPC response using helper function
+	// Build and return the gRPC response
 	return &pb.BatchDeleteDocumentResponse{
-		Documents:    protoDocs,
+		DocumentIds:  docIds,
 		DeletedCount: int32(docDeletes),
 	}, nil
 }
