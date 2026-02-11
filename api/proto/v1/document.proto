@@ -41,8 +41,12 @@ message CreateDocumentRequest {
 
 // CreateDocumentResponse represents a response to create a document
 message CreateDocumentResponse {
-    // created document
-    Document document = 1;
+    // id of the created document
+    string id = 1;
+    // creation timestamp
+    google.protobuf.Timestamp created_at = 2;
+    // update timestamp
+    google.protobuf.Timestamp updated_at = 3;
 }
 
 // ListDocumentRequest represents a request to list a single document
@@ -133,10 +137,14 @@ message UpsertDocumentRequest {
 
 // UpsertDocumentResponse represents a response to upsert a document
 message UpsertDocumentResponse {
-    // the upserted document
-    Document document = 1;
+    // id of the upserted document
+    string id = 1;
     // true if document was created, false if updated
     bool is_new = 2;
+    // creation timestamp
+    google.protobuf.Timestamp created_at = 3;
+    // update timestamp
+    google.protobuf.Timestamp updated_at = 4;
 }
 
 // FullTextSearchRequest represent a request for performing `full text search` on a collection
@@ -173,8 +181,8 @@ message BatchInsertDocumentResponse {
     // the total number of successful insertions
     int32 insert_count = 1;
 
-    // documents
-    repeated Document documents = 2;
+    // ids of the inserted documents
+    repeated string document_ids = 2;
 }
 
 // BatchDeleteDocumentRequest represents a batch deletion of documents in a collection
@@ -191,8 +199,8 @@ message BatchDeleteDocumentResponse {
     // the total number of deletions
     int32 deleted_count = 1;
 
-    // documents
-    repeated Document documents = 2;
+    // ids of the deleted documents
+    repeated string document_ids = 2;
 }
 
 // HybridSearchRequest represents a request for performing hybrid search on collection

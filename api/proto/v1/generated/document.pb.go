@@ -200,8 +200,12 @@ func (x *CreateDocumentRequest) GetMetadata() map[string]*structpb.Struct {
 // CreateDocumentResponse represents a response to create a document
 type CreateDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// created document
-	Document      *Document `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	// id of the created document
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// creation timestamp
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// update timestamp
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -236,9 +240,23 @@ func (*CreateDocumentResponse) Descriptor() ([]byte, []int) {
 	return file_document_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *CreateDocumentResponse) GetDocument() *Document {
+func (x *CreateDocumentResponse) GetId() string {
 	if x != nil {
-		return x.Document
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CreateDocumentResponse) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *CreateDocumentResponse) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
 	}
 	return nil
 }
@@ -823,10 +841,14 @@ func (x *UpsertDocumentRequest) GetMetadata() map[string]*structpb.Struct {
 // UpsertDocumentResponse represents a response to upsert a document
 type UpsertDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// the upserted document
-	Document *Document `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	// id of the upserted document
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// true if document was created, false if updated
-	IsNew         bool `protobuf:"varint,2,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`
+	IsNew bool `protobuf:"varint,2,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`
+	// creation timestamp
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// update timestamp
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -861,11 +883,11 @@ func (*UpsertDocumentResponse) Descriptor() ([]byte, []int) {
 	return file_document_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *UpsertDocumentResponse) GetDocument() *Document {
+func (x *UpsertDocumentResponse) GetId() string {
 	if x != nil {
-		return x.Document
+		return x.Id
 	}
-	return nil
+	return ""
 }
 
 func (x *UpsertDocumentResponse) GetIsNew() bool {
@@ -873,6 +895,20 @@ func (x *UpsertDocumentResponse) GetIsNew() bool {
 		return x.IsNew
 	}
 	return false
+}
+
+func (x *UpsertDocumentResponse) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *UpsertDocumentResponse) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
 }
 
 // FullTextSearchRequest represent a request for performing `full text search` on a collection
@@ -1053,8 +1089,8 @@ type BatchInsertDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// the total number of successful insertions
 	InsertCount int32 `protobuf:"varint,1,opt,name=insert_count,json=insertCount,proto3" json:"insert_count,omitempty"`
-	// documents
-	Documents     []*Document `protobuf:"bytes,2,rep,name=documents,proto3" json:"documents,omitempty"`
+	// ids of the inserted documents
+	DocumentIds   []string `protobuf:"bytes,2,rep,name=document_ids,json=documentIds,proto3" json:"document_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1096,9 +1132,9 @@ func (x *BatchInsertDocumentResponse) GetInsertCount() int32 {
 	return 0
 }
 
-func (x *BatchInsertDocumentResponse) GetDocuments() []*Document {
+func (x *BatchInsertDocumentResponse) GetDocumentIds() []string {
 	if x != nil {
-		return x.Documents
+		return x.DocumentIds
 	}
 	return nil
 }
@@ -1163,8 +1199,8 @@ type BatchDeleteDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// the total number of deletions
 	DeletedCount int32 `protobuf:"varint,1,opt,name=deleted_count,json=deletedCount,proto3" json:"deleted_count,omitempty"`
-	// documents
-	Documents     []*Document `protobuf:"bytes,2,rep,name=documents,proto3" json:"documents,omitempty"`
+	// ids of the deleted documents
+	DocumentIds   []string `protobuf:"bytes,2,rep,name=document_ids,json=documentIds,proto3" json:"document_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1206,9 +1242,9 @@ func (x *BatchDeleteDocumentResponse) GetDeletedCount() int32 {
 	return 0
 }
 
-func (x *BatchDeleteDocumentResponse) GetDocuments() []*Document {
+func (x *BatchDeleteDocumentResponse) GetDocumentIds() []string {
 	if x != nil {
-		return x.Documents
+		return x.DocumentIds
 	}
 	return nil
 }
@@ -1391,9 +1427,13 @@ const file_document_proto_rawDesc = "" +
 	"\bmetadata\x18\x04 \x03(\v2-.document.CreateDocumentRequest.MetadataEntryR\bmetadata\x1aT\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
-	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"H\n" +
-	"\x16CreateDocumentResponse\x12.\n" +
-	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\"%\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\x9e\x01\n" +
+	"\x16CreateDocumentResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
+	"\n" +
+	"created_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"%\n" +
 	"\x13ListDocumentRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"F\n" +
 	"\x14ListDocumentResponse\x12.\n" +
@@ -1433,10 +1473,14 @@ const file_document_proto_rawDesc = "" +
 	"\bmetadata\x18\x05 \x03(\v2-.document.UpsertDocumentRequest.MetadataEntryR\bmetadata\x1aT\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
-	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"_\n" +
-	"\x16UpsertDocumentResponse\x12.\n" +
-	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\x12\x15\n" +
-	"\x06is_new\x18\x02 \x01(\bR\x05isNew\"\x83\x01\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\xb5\x01\n" +
+	"\x16UpsertDocumentResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
+	"\x06is_new\x18\x02 \x01(\bR\x05isNew\x129\n" +
+	"\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x83\x01\n" +
 	"\x15FullTextSearchRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\x12\x14\n" +
@@ -1446,16 +1490,16 @@ const file_document_proto_rawDesc = "" +
 	"\x06result\x18\x01 \x03(\v2\x16.document.SearchResultR\x06result\"\x80\x01\n" +
 	"\x1aBatchInsertDocumentRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12=\n" +
-	"\tdocuments\x18\x02 \x03(\v2\x1f.document.CreateDocumentRequestR\tdocuments\"r\n" +
+	"\tdocuments\x18\x02 \x03(\v2\x1f.document.CreateDocumentRequestR\tdocuments\"c\n" +
 	"\x1bBatchInsertDocumentResponse\x12!\n" +
-	"\finsert_count\x18\x01 \x01(\x05R\vinsertCount\x120\n" +
-	"\tdocuments\x18\x02 \x03(\v2\x12.document.DocumentR\tdocuments\"c\n" +
+	"\finsert_count\x18\x01 \x01(\x05R\vinsertCount\x12!\n" +
+	"\fdocument_ids\x18\x02 \x03(\tR\vdocumentIds\"c\n" +
 	"\x1aBatchDeleteDocumentRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12 \n" +
-	"\vdocumentIds\x18\x02 \x03(\tR\vdocumentIds\"t\n" +
+	"\vdocumentIds\x18\x02 \x03(\tR\vdocumentIds\"e\n" +
 	"\x1bBatchDeleteDocumentResponse\x12#\n" +
-	"\rdeleted_count\x18\x01 \x01(\x05R\fdeletedCount\x120\n" +
-	"\tdocuments\x18\x02 \x03(\v2\x12.document.DocumentR\tdocuments\"\x9d\x03\n" +
+	"\rdeleted_count\x18\x01 \x01(\x05R\fdeletedCount\x12!\n" +
+	"\fdocument_ids\x18\x02 \x03(\tR\vdocumentIds\"\x9d\x03\n" +
 	"\x13HybridSearchRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12!\n" +
 	"\fquery_vector\x18\x02 \x03(\x02R\vqueryVector\x12\x1d\n" +
@@ -1533,19 +1577,19 @@ var file_document_proto_depIdxs = []int32{
 	27, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
 	22, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
 	23, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
-	0,  // 4: document.CreateDocumentResponse.document:type_name -> document.Document
-	0,  // 5: document.ListDocumentResponse.document:type_name -> document.Document
-	0,  // 6: document.ListDocumentsResponse.documents:type_name -> document.Document
-	27, // 7: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	24, // 8: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
-	0,  // 9: document.SearchResult.document:type_name -> document.Document
-	10, // 10: document.SearchDocumentResponse.results:type_name -> document.SearchResult
-	25, // 11: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
-	0,  // 12: document.UpsertDocumentResponse.document:type_name -> document.Document
-	10, // 13: document.FullTextSearchResponse.result:type_name -> document.SearchResult
-	1,  // 14: document.BatchInsertDocumentRequest.documents:type_name -> document.CreateDocumentRequest
-	0,  // 15: document.BatchInsertDocumentResponse.documents:type_name -> document.Document
-	0,  // 16: document.BatchDeleteDocumentResponse.documents:type_name -> document.Document
+	27, // 4: document.CreateDocumentResponse.created_at:type_name -> google.protobuf.Timestamp
+	27, // 5: document.CreateDocumentResponse.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 6: document.ListDocumentResponse.document:type_name -> document.Document
+	0,  // 7: document.ListDocumentsResponse.documents:type_name -> document.Document
+	27, // 8: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	24, // 9: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
+	0,  // 10: document.SearchResult.document:type_name -> document.Document
+	10, // 11: document.SearchDocumentResponse.results:type_name -> document.SearchResult
+	25, // 12: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
+	27, // 13: document.UpsertDocumentResponse.created_at:type_name -> google.protobuf.Timestamp
+	27, // 14: document.UpsertDocumentResponse.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 15: document.FullTextSearchResponse.result:type_name -> document.SearchResult
+	1,  // 16: document.BatchInsertDocumentRequest.documents:type_name -> document.CreateDocumentRequest
 	26, // 17: document.HybridSearchRequest.metadata:type_name -> document.HybridSearchRequest.MetadataEntry
 	10, // 18: document.HybridSearchResponse.results:type_name -> document.SearchResult
 	28, // 19: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
