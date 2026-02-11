@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Annany2002/vector-sync/internal/models"
@@ -33,17 +34,15 @@ func (r *DocumentRepo) Create(ctx context.Context, collectionId, content string,
 	insertQuery := `
 		INSERT INTO documents (collection_id, vector, metadata, content)
 		VALUES ($1, $2::vector, $3, $4)
-		RETURNING id, collection_id, vector, metadata, content, created_at, updated_at
+		RETURNING id, collection_id, metadata, content, created_at, updated_at
 	`
 
 	var document models.Document
-	var vectorStrReturned string
 	var metadataBytes []byte
 
 	err = r.db.QueryRowContext(ctx, insertQuery, collectionId, vectorStr, metadataJSON, content).Scan(
 		&document.Id,
 		&document.CollectionId,
-		&vectorStrReturned,
 		&metadataBytes,
 		&document.Content,
 		&document.CreatedAt,
@@ -51,12 +50,6 @@ func (r *DocumentRepo) Create(ctx context.Context, collectionId, content string,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert document: %w", err)
-	}
-
-	// Parse vector string back to []float32
-	document.Vector, err = stringToVector(vectorStrReturned)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse returned vector: %w", err)
 	}
 
 	// Parse metadata JSON back to map
@@ -98,18 +91,16 @@ func (r *DocumentRepo) Upsert(ctx context.Context, documentId, collectionId, con
 			metadata = EXCLUDED.metadata,
 			content = EXCLUDED.content,
 			updated_at = NOW()
-		RETURNING id, collection_id, vector, metadata, content, created_at, updated_at, (xmax = 0) AS is_new
+		RETURNING id, collection_id, metadata, content, created_at, updated_at, (xmax = 0) AS is_new
 	`
 
 	var document models.Document
-	var vectorStrReturned string
 	var metadataBytes []byte
 	var isNew bool
 
 	err = r.db.QueryRowContext(ctx, upsertQuery, documentId, collectionId, vectorStr, metadataJSON, content).Scan(
 		&document.Id,
 		&document.CollectionId,
-		&vectorStrReturned,
 		&metadataBytes,
 		&document.Content,
 		&document.CreatedAt,
@@ -118,12 +109,6 @@ func (r *DocumentRepo) Upsert(ctx context.Context, documentId, collectionId, con
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert document: %w", err)
-	}
-
-	// Parse vector string back to []float32
-	document.Vector, err = stringToVector(vectorStrReturned)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse returned vector: %w", err)
 	}
 
 	// Parse metadata JSON back to map
@@ -142,11 +127,18 @@ func (r *DocumentRepo) Upsert(ctx context.Context, documentId, collectionId, con
 
 // vectorToString converts []float32 to PostgreSQL vector format: '[1.0,2.0,3.0]'
 func vectorToString(vec []float32) string {
-	strVals := make([]string, len(vec))
+	var b strings.Builder
+	// Pre-allocate: '[' + ~12 chars per float + ',' separators + ']'
+	b.Grow(1 + len(vec)*12 + 1)
+	b.WriteByte('[')
 	for i, v := range vec {
-		strVals[i] = fmt.Sprintf("%f", v)
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(strconv.FormatFloat(float64(v), 'f', -1, 32))
 	}
-	return "[" + strings.Join(strVals, ",") + "]"
+	b.WriteByte(']')
+	return b.String()
 }
 
 // stringToVector parses PostgreSQL vector string '[1.0,2.0,3.0]' to []float32
@@ -164,12 +156,11 @@ func stringToVector(s string) ([]float32, error) {
 	vec := make([]float32, len(parts))
 
 	for i, part := range parts {
-		var val float32
-		_, err := fmt.Sscanf(strings.TrimSpace(part), "%f", &val)
+		val, err := strconv.ParseFloat(strings.TrimSpace(part), 32)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse vector value at index %d: %w", i, err)
 		}
-		vec[i] = val
+		vec[i] = float32(val)
 	}
 
 	return vec, nil
@@ -541,7 +532,7 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 	}
 
 	// add returning statement to return the document
-	query.WriteString("RETURNING id, collection_id, vector, metadata, content, created_at, updated_at")
+	query.WriteString(" RETURNING id, collection_id, metadata, content, created_at, updated_at")
 
 	// docs represent the documents that are successfully inserted and are returned by query
 	var docs []models.Document
@@ -555,25 +546,17 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 	// scan the rows to extract individual docs
 	for rows.Next() {
 		var doc models.Document
-		var vectorStr string
 		var metadata []byte
 
 		err := rows.Scan(
 			&doc.Id,
 			&doc.CollectionId,
-			&vectorStr,
 			&metadata,
 			&doc.Content,
 			&doc.CreatedAt,
 			&doc.UpdatedAt,
 		)
 
-		if err != nil {
-			return 0, nil, err
-		}
-
-		// Parse vector string back to []float32
-		doc.Vector, err = stringToVector(vectorStr)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -606,7 +589,7 @@ func (r *DocumentRepo) BatchDelete(ctx context.Context, collectionId string, doc
 		WHERE ID = ANY($1::uuid[]) 
 		AND 
 		collection_id = $2
-		RETURNING id, collection_id, vector, metadata, content, created_at, updated_at
+		RETURNING id, collection_id, metadata, content, created_at, updated_at
 	`
 
 	var docs []models.Document
@@ -619,25 +602,17 @@ func (r *DocumentRepo) BatchDelete(ctx context.Context, collectionId string, doc
 
 	for rows.Next() {
 		var doc models.Document
-		var vectorStr string
 		var metadata []byte
 
 		err := rows.Scan(
 			&doc.Id,
 			&doc.CollectionId,
-			&vectorStr,
 			&metadata,
 			&doc.Content,
 			&doc.CreatedAt,
 			&doc.UpdatedAt,
 		)
 
-		if err != nil {
-			return 0, nil, err
-		}
-
-		// Parse vector string back to []float32
-		doc.Vector, err = stringToVector(vectorStr)
 		if err != nil {
 			return 0, nil, err
 		}
