@@ -304,20 +304,26 @@ type SearchResult struct {
 // Search performs vector similarity search using cosine similarity
 // Returns top-K results ordered by similarity (highest first)
 // Supports optional metadata filtering and minimum similarity threshold
-func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVector []float32, topK int, metadataFilter map[string]any, minThreshold float32) ([]SearchResult, error) {
+// When includeVector is false, the vector column is excluded from the SQL SELECT
+// to avoid transferring ~3KB per result and skipping deserialization
+func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVector []float32, topK int, metadataFilter map[string]any, minThreshold float32, includeVector bool) ([]SearchResult, error) {
 	// Convert query vector to PostgreSQL format
 	vectorStr := vectorToString(queryVector)
 
 	// Build the base query with cosine similarity
 	// pgvector's <=> operator is cosine distance (0 = identical, 2 = opposite)
 	// We convert to similarity: 1 - distance = similarity (1 = identical, -1 = opposite)
-	query := `
+	vectorColumn := ""
+	if includeVector {
+		vectorColumn = "vector, "
+	}
+	query := fmt.Sprintf(`
 		SELECT 
-			id, collection_id, vector, metadata, content, created_at, updated_at,
+			id, collection_id, %smetadata, content, created_at, updated_at,
 			1 - (vector <=> $1::vector) AS similarity
 		FROM documents
 		WHERE collection_id = $2
-	`
+	`, vectorColumn)
 
 	args := []any{vectorStr, collectionId}
 	argIndex := 3
@@ -362,27 +368,40 @@ func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVec
 	// Scan all rows
 	for rows.Next() {
 		var result SearchResult
-		var vectorStrReturned string
 		var metadataBytes []byte
 
-		err = rows.Scan(
-			&result.Document.Id,
-			&result.Document.CollectionId,
-			&vectorStrReturned,
-			&metadataBytes,
-			&result.Document.Content,
-			&result.Document.CreatedAt,
-			&result.Document.UpdatedAt,
-			&result.Score,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan search result: %w", err)
-		}
-
-		// Parse vector string back to []float32
-		result.Document.Vector, err = stringToVector(vectorStrReturned)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+		if includeVector {
+			var vectorStrReturned string
+			err = rows.Scan(
+				&result.Document.Id,
+				&result.Document.CollectionId,
+				&vectorStrReturned,
+				&metadataBytes,
+				&result.Document.Content,
+				&result.Document.CreatedAt,
+				&result.Document.UpdatedAt,
+				&result.Score,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan search result: %w", err)
+			}
+			result.Document.Vector, err = stringToVector(vectorStrReturned)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+			}
+		} else {
+			err = rows.Scan(
+				&result.Document.Id,
+				&result.Document.CollectionId,
+				&metadataBytes,
+				&result.Document.Content,
+				&result.Document.CreatedAt,
+				&result.Document.UpdatedAt,
+				&result.Score,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan search result: %w", err)
+			}
 		}
 
 		// Parse metadata JSON back to map
@@ -406,21 +425,27 @@ func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVec
 
 // FullTextSearch performs full-text search on document content
 // Uses PostgreSQL tsvector/tsquery for text matching and ts_rank for relevance scoring
-func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query string, limit int32, minRank float32) ([]SearchResult, error) {
+// When includeVector is false, the vector column is excluded from SQL to reduce payload
+func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query string, limit int32, minRank float32, includeVector bool) ([]SearchResult, error) {
 	// Note:
 	// Query is built dynamically because minRank is optional.
 	// When minRank is 0, we skip the threshold filter for better performance.
 
+	vectorColumn := ""
+	if includeVector {
+		vectorColumn = "vector, "
+	}
+
 	// base query
-	searchQuery := `
-		SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+	searchQuery := fmt.Sprintf(`
+		SELECT id, collection_id, %smetadata, content, created_at, updated_at,
 			ts_rank(to_tsvector('english', COALESCE(content, '')),
 			plainto_tsquery('english', $1)) as rank
 		FROM documents
 		WHERE collection_id = $2 
 			AND to_tsvector('english', COALESCE(content, ''))
 				@@ plainto_tsquery('english', $1)
-	`
+	`, vectorColumn)
 
 	// args holds the ACTUAL VALUES that replace $1, $2, $3, etc.
 	// argIndex tracks the NEXT placeholder number to use
@@ -451,27 +476,40 @@ func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query s
 	// Scan all rows
 	for rows.Next() {
 		var result SearchResult
-		var vectorStrReturned string
 		var metadataBytes []byte
 
-		err = rows.Scan(
-			&result.Document.Id,
-			&result.Document.CollectionId,
-			&vectorStrReturned,
-			&metadataBytes,
-			&result.Document.Content,
-			&result.Document.CreatedAt,
-			&result.Document.UpdatedAt,
-			&result.Score,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan search result: %w", err)
-		}
-
-		// Parse vector string back to []float32
-		result.Document.Vector, err = stringToVector(vectorStrReturned)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+		if includeVector {
+			var vectorStrReturned string
+			err = rows.Scan(
+				&result.Document.Id,
+				&result.Document.CollectionId,
+				&vectorStrReturned,
+				&metadataBytes,
+				&result.Document.Content,
+				&result.Document.CreatedAt,
+				&result.Document.UpdatedAt,
+				&result.Score,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan search result: %w", err)
+			}
+			result.Document.Vector, err = stringToVector(vectorStrReturned)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+			}
+		} else {
+			err = rows.Scan(
+				&result.Document.Id,
+				&result.Document.CollectionId,
+				&metadataBytes,
+				&result.Document.Content,
+				&result.Document.CreatedAt,
+				&result.Document.UpdatedAt,
+				&result.Score,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan search result: %w", err)
+			}
 		}
 
 		// Parse metadata JSON back to map
@@ -644,6 +682,11 @@ func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText
 	// Convert query vector to PostgreSQL format
 	vectorStr := vectorToString(queryVector)
 
+	vectorColumn := ""
+	if includeVector {
+		vectorColumn = "vector, "
+	}
+
 	// Build CTE that computes both scores for each matching document:
 	// - fts_score: PostgreSQL ts_rank for full-text relevance (0 if no text query)
 	// - vector_score: cosine similarity (1 - cosine_distance)
@@ -654,9 +697,9 @@ func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText
 
 	if queryText != "" {
 		// Both text and vector search
-		hybrid = `
+		hybrid = fmt.Sprintf(`
 		WITH scored AS (
-			SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+			SELECT id, collection_id, %smetadata, content, created_at, updated_at,
 				ts_rank(to_tsvector('english', COALESCE(content, '')),
 				plainto_tsquery('english', $1)) as fts_score,
 				1 - (vector <=> $3::vector) AS vector_score
@@ -664,19 +707,19 @@ func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText
 			WHERE collection_id = $2 
 				AND to_tsvector('english', COALESCE(content, ''))
 					@@ plainto_tsquery('english', $1)
-		`
+		`, vectorColumn)
 		args = []any{queryText, collectionId, vectorStr}
 		argIndex = 4
 	} else {
 		// Vector-only search (no text filter)
-		hybrid = `
+		hybrid = fmt.Sprintf(`
 		WITH scored AS (
-			SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+			SELECT id, collection_id, %smetadata, content, created_at, updated_at,
 				0::float as fts_score,
 				1 - (vector <=> $2::vector) AS vector_score
 			FROM documents
 			WHERE collection_id = $1
-		`
+		`, vectorColumn)
 		args = []any{collectionId, vectorStr}
 		argIndex = 3
 	}
@@ -700,12 +743,12 @@ func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText
 	// Close CTE and compute weighted combined score for final ordering
 	hybrid += fmt.Sprintf(`
 )
-SELECT id, collection_id, vector, metadata, content, created_at, updated_at,
+SELECT id, collection_id, %smetadata, content, created_at, updated_at,
     ($%d * fts_score) + ($%d * vector_score) AS combined_score
 FROM scored
 ORDER BY combined_score DESC
 LIMIT $%d
-`, argIndex, argIndex+1, argIndex+2)
+`, vectorColumn, argIndex, argIndex+1, argIndex+2)
 
 	args = append(args, textWeight, vectorWeight, topK)
 
@@ -721,27 +764,40 @@ LIMIT $%d
 	// Scan all rows
 	for rows.Next() {
 		var result SearchResult
-		var vectorStrReturned string
 		var metadataBytes []byte
 
-		err = rows.Scan(
-			&result.Document.Id,
-			&result.Document.CollectionId,
-			&vectorStrReturned,
-			&metadataBytes,
-			&result.Document.Content,
-			&result.Document.CreatedAt,
-			&result.Document.UpdatedAt,
-			&result.Score,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan search result: %w", err)
-		}
-
-		// Parse vector string back to []float32
-		result.Document.Vector, err = stringToVector(vectorStrReturned)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+		if includeVector {
+			var vectorStrReturned string
+			err = rows.Scan(
+				&result.Document.Id,
+				&result.Document.CollectionId,
+				&vectorStrReturned,
+				&metadataBytes,
+				&result.Document.Content,
+				&result.Document.CreatedAt,
+				&result.Document.UpdatedAt,
+				&result.Score,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan search result: %w", err)
+			}
+			result.Document.Vector, err = stringToVector(vectorStrReturned)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse returned vector: %w", err)
+			}
+		} else {
+			err = rows.Scan(
+				&result.Document.Id,
+				&result.Document.CollectionId,
+				&metadataBytes,
+				&result.Document.Content,
+				&result.Document.CreatedAt,
+				&result.Document.UpdatedAt,
+				&result.Score,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan search result: %w", err)
+			}
 		}
 
 		// Parse metadata JSON back to map
@@ -750,11 +806,6 @@ LIMIT $%d
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 			}
-		}
-
-		// Exclude vector from response to reduce payload size
-		if !includeVector {
-			result.Document.Vector = nil
 		}
 
 		results = append(results, result)

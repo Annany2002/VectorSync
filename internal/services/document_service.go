@@ -245,7 +245,7 @@ const (
 
 // SearchDocuments performs vector similarity search
 // Returns top-K most similar documents with similarity scores
-func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId string, queryVector []float32, topK int32, metadataFilter map[string]any, minThreshold float32) ([]db.SearchResult, error) {
+func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId string, queryVector []float32, topK int32, metadataFilter map[string]any, minThreshold float32, includeVector bool) ([]db.SearchResult, error) {
 	// Validate collection_id
 	if collectionId == "" {
 		return nil, errors.New("collection_id is required")
@@ -303,7 +303,7 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 	}
 
 	// Perform search via repository
-	results, err := s.documentRepo.Search(ctx, collectionId, queryVector, int(topK), metadataFilter, minThreshold)
+	results, err := s.documentRepo.Search(ctx, collectionId, queryVector, int(topK), metadataFilter, minThreshold, includeVector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search documents: %w", err)
 	}
@@ -313,7 +313,7 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 
 // FullTextSearchDocuments performs full-text search on document content
 // Returns documents ranked by relevance, filtered by optional minRank threshold
-func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectionId, query string, limit int32, minRank float32) ([]db.SearchResult, error) {
+func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectionId, query string, limit int32, minRank float32, includeVector bool) ([]db.SearchResult, error) {
 	// Validate collection_id
 	if collectionId == "" {
 		return nil, errors.New("collection_id is required")
@@ -324,13 +324,10 @@ func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectio
 		return nil, errors.New("query cannot be empty")
 	}
 
-	// Check if collection exists
-	_, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Check if collection exists (uses cache)
+	_, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return nil, err
 	}
 
 	// Validate and normalize limit
@@ -342,7 +339,7 @@ func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectio
 	}
 
 	// Perform search via repository
-	results, err := s.documentRepo.FullTextSearch(ctx, collectionId, query, limit, minRank)
+	results, err := s.documentRepo.FullTextSearch(ctx, collectionId, query, limit, minRank, includeVector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search documents: %w", err)
 	}

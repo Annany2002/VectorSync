@@ -200,6 +200,7 @@ func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDoc
 		topK,
 		metadataFilterMap,
 		minThreshold,
+		includeVector,
 	)
 	if err != nil {
 		return nil, err
@@ -210,11 +211,6 @@ func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDoc
 	for i, result := range searchResults {
 		// Convert document to proto format
 		pbDoc := convertToProtoDocument(&result.Document)
-
-		// Optionally exclude vector from response (for smaller payload size)
-		if !includeVector {
-			pbDoc.Vector = nil
-		}
 
 		pbResults[i] = &pb.SearchResult{
 			Document: pbDoc,
@@ -269,6 +265,7 @@ func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSe
 		query,
 		limit,
 		minRank,
+		false, // full-text search does not return vectors by default
 	)
 	if err != nil {
 		return nil, err
