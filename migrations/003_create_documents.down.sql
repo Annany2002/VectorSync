@@ -19,6 +19,5 @@ DROP TABLE IF EXISTS documents CASCADE;
 DROP FUNCTION IF EXISTS increment_document_count();
 DROP FUNCTION IF EXISTS decrement_document_count();
 
--- Clean up shared update_updated_at_column function (only safe after documents table is dropped)
--- This function is created in migration 002 but shared by both tables
-DROP FUNCTION IF EXISTS update_updated_at_column();
+-- Note: update_updated_at_column() is NOT dropped here.
+-- It belongs to migration 002 and is still used by the collections table.

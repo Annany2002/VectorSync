@@ -29,39 +29,53 @@ CREATE TRIGGER update_documents_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Create trigger functions to maintain document_count in collections table
--- These keep the count synchronized automatically when documents are inserted/deleted
+-- Statement-level triggers: fire once per INSERT/DELETE statement, not per row.
+-- Uses transition tables (REFERENCING NEW/OLD TABLE) to count affected rows
+-- in a single UPDATE per collection_id, eliminating N per-row UPDATEs.
 
--- Increment document_count when a document is inserted
+-- Increment document_count when documents are inserted
 CREATE OR REPLACE FUNCTION increment_document_count()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE collections
-    SET document_count = document_count + 1
-    WHERE id = NEW.collection_id;
-    RETURN NEW;
+    UPDATE collections c
+    SET document_count = c.document_count + cnt.n
+    FROM (
+        SELECT collection_id, COUNT(*) AS n
+        FROM new_rows
+        GROUP BY collection_id
+    ) cnt
+    WHERE c.id = cnt.collection_id;
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- Decrement document_count when a document is deleted
+-- Decrement document_count when documents are deleted
 CREATE OR REPLACE FUNCTION decrement_document_count()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE collections
-    SET document_count = document_count - 1
-    WHERE id = OLD.collection_id;
-    RETURN OLD;
+    UPDATE collections c
+    SET document_count = c.document_count - cnt.n
+    FROM (
+        SELECT collection_id, COUNT(*) AS n
+        FROM old_rows
+        GROUP BY collection_id
+    ) cnt
+    WHERE c.id = cnt.collection_id;
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- Attach document count triggers to documents table
+-- Attach statement-level document count triggers to documents table
 CREATE TRIGGER increment_collection_doc_count
     AFTER INSERT ON documents
-    FOR EACH ROW
+    REFERENCING NEW TABLE AS new_rows
+    FOR EACH STATEMENT
     EXECUTE FUNCTION increment_document_count();
 
 CREATE TRIGGER decrement_collection_doc_count
     AFTER DELETE ON documents
-    FOR EACH ROW
+    REFERENCING OLD TABLE AS old_rows
+    FOR EACH STATEMENT
     EXECUTE FUNCTION decrement_document_count();
 
 -- Note: Vector similarity index (IVFFlat/HNSW) can be added later for ANN search
