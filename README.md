@@ -8,22 +8,21 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25.4+-00ADD8?logo=go)](https://golang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-316192?logo=postgresql)](https://www.postgresql.org/)
 
-**A production-ready, self-hostable vector database for semantic search and embedding storage.**
+**A self-hostable vector search API built on PostgreSQL + pgvector.**
 
-VectorSync is a high-performance vector indexing engine designed for enterprise applications requiring real-time similarity search, hybrid search capabilities, and reliable embedding storage. Built with Go and PostgreSQL with pgvector.
+VectorSync is a Go-based API service for vector storage and retrieval. It wraps PostgreSQL with pgvector, exposing vector similarity search, full-text search, and hybrid search through gRPC and REST endpoints.
 
 ## Features
 
-- **Vector Similarity Search** - Cosine similarity with configurable top-K results
-- **Full-Text Search** - Keyword search on document content using PostgreSQL tsvector
-- **Hybrid Search** - Combine vector similarity and full-text search with weighted scoring
-- **Dual API Support** - Native gRPC and HTTP/JSON via grpc-gateway
-- **Collection Management** - Organize embeddings with fixed dimensions
-- **CRUD + Upsert** - Full document operations with atomic upsert
-- **Batch Operations** - Insert and delete multiple documents atomically in a single request
-- **Metadata Filtering** - Rich JSONB-based filtering
-- **Health Checks** - Kubernetes-compatible liveness and readiness probes
-- **Graceful Shutdown** - Proper signal handling and resource cleanup
+- **Vector Similarity Search** -- Cosine similarity with configurable top-K and minimum threshold
+- **Full-Text Search** -- PostgreSQL tsvector-based keyword search with relevance ranking
+- **Hybrid Search** -- Weighted combination of vector similarity and full-text search
+- **Dual API** -- Native gRPC (port 6309) and HTTP/JSON via grpc-gateway (port 8080)
+- **Collection Management** -- Organize embeddings by collection with fixed dimensions
+- **CRUD + Upsert** -- Full document lifecycle with atomic insert-or-update
+- **Batch Operations** -- Insert and delete up to 100 documents per request
+- **Metadata Filtering** -- JSONB-based filtering on search queries
+- **Optional Vector Returns** -- Exclude vectors from responses to reduce payload by ~97%
 
 ## Performance
 
@@ -31,12 +30,15 @@ Benchmarked with 768-dimension vectors on PostgreSQL with pgvector:
 
 | Operation | Throughput | Avg Latency |
 |-----------|-----------|-------------|
-| Single Insert | ~6 ops/sec | ~164ms |
-| Batch Insert (100 docs) | ~64 docs/sec | ~1.6s per batch |
-| Upsert (new) | ~6 ops/sec | ~159ms |
-| Upsert (update) | ~5 ops/sec | ~205ms |
+| Single Insert | ~7 ops/sec | ~143ms |
+| Batch Insert (100 docs) | ~136 docs/sec | ~735ms/batch |
+| Batch Insert (500 docs) | ~214 docs/sec | ~2.3s/batch |
+| Upsert | ~7 ops/sec | ~148ms |
+| Vector Search (k=10) | ~7 ops/sec | ~150ms |
+| Full-Text Search | ~7.5 ops/sec | ~134ms |
+| Concurrent Inserts (15 clients) | ~47 ops/sec | ~219ms |
 
-Write operations use in-memory collection caching and optimized vector serialization to minimize overhead. Response payloads for writes exclude vector data, reducing transfer size by ~3KB per document.
+Key optimizations: statement-level triggers for document counting, in-memory collection dimension cache, connection pooling (25 open / 10 idle), and explicit transactions for batch operations.
 
 ## Quick Start
 

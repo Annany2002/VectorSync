@@ -1,13 +1,11 @@
 ---
 title: Introduction
-description: 'A production-ready, self-hostable vector database for semantic search'
+description: 'A self-hostable vector search API built on PostgreSQL + pgvector'
 ---
 
 # Welcome to VectorSync
 
-VectorSync is a high-performance vector indexing engine designed for enterprise applications requiring real-time similarity search, hybrid search capabilities, and reliable embedding storage.
-
-Built with **Go** and **PostgreSQL with pgvector**, it provides both gRPC and HTTP/JSON APIs for seamless integration into modern microservice architectures.
+VectorSync is a Go-based API service for vector storage and retrieval. It wraps PostgreSQL with pgvector, exposing vector similarity search, full-text search, and hybrid search through both gRPC and HTTP/JSON endpoints.
 
 ## Key Features
 
@@ -24,8 +22,14 @@ Built with **Go** and **PostgreSQL with pgvector**, it provides both gRPC and HT
   <Card title="Collection Management" icon="folder">
     Organize embeddings into collections with fixed dimensions
   </Card>
-  <Card title="CRUD Operations" icon="database">
+  <Card title="CRUD + Upsert" icon="database">
     Insert, upsert, retrieve, and delete documents with embeddings
+  </Card>
+  <Card title="Hybrid Search" icon="arrows-rotate">
+    Weighted combination of vector similarity and full-text search
+  </Card>
+  <Card title="Batch Operations" icon="layer-group">
+    Insert and delete up to 100 documents per request
   </Card>
 </CardGroup>
 
@@ -47,7 +51,7 @@ Built with **Go** and **PostgreSQL with pgvector**, it provides both gRPC and HT
 
 ## Architecture Overview
 
-VectorSync uses a hybrid architecture combining in-memory indexing with persistent storage:
+VectorSync uses a layered architecture with in-memory collection caching and PostgreSQL as the persistent storage:
 
 ```
 ┌─────────────────────────────────────────────────────┐

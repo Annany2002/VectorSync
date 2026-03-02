@@ -1,13 +1,13 @@
 ---
 title: Roadmap
-description: 'Future plans and upcoming features'
+description: 'What VectorSync is building toward'
 ---
 
 ## Current Release: v0.1.0-alpha
 
-VectorSync is currently in alpha with core vector database functionality complete.
+Core vector search API with storage, retrieval, and three search modes.
 
-### Completed Features
+### Completed
 
 <CardGroup cols={2}>
   <Card title="Collection Management" icon="check">
@@ -20,121 +20,111 @@ VectorSync is currently in alpha with core vector database functionality complet
     Cosine similarity search with top-K results and metadata filtering
   </Card>
   <Card title="Full-Text Search" icon="check">
-    Search document content using PostgreSQL tsvector with relevance ranking
+    PostgreSQL tsvector-based keyword search with relevance ranking
   </Card>
   <Card title="Hybrid Search" icon="check">
-    Combined vector similarity and full-text search with weighted scoring
+    Weighted vector + full-text search in a single query
   </Card>
   <Card title="Batch Operations" icon="check">
-    Insert and delete multiple documents in a single atomic request
+    Insert and delete up to 100 documents atomically
+  </Card>
+  <Card title="Performance Tuning" icon="check">
+    Statement-level triggers, connection pool tuning, explicit batch transactions, optional vector exclusion in responses (~97% payload reduction)
   </Card>
   <Card title="Dual API" icon="check">
-    gRPC (port 6309) and HTTP/JSON (port 8080) interfaces
-  </Card>
-  <Card title="Health Checks" icon="check">
-    Kubernetes-compatible liveness and readiness probes
-  </Card>
-  <Card title="Graceful Shutdown" icon="check">
-    Proper signal handling with ordered resource cleanup
+    gRPC (6309) and HTTP/JSON (8080) via grpc-gateway
   </Card>
 </CardGroup>
 
 ---
 
-## v0.2.0: Performance & Scalability
+## v0.2.0: Ingestion Pipeline
 
-### Write Optimizations (Completed)
-- Lightweight write responses -- vector data excluded from insert/upsert/batch responses
-- In-memory collection cache with dimension lookups to skip repeated DB roundtrips
-- Optimized vector serialization using `strconv` and `strings.Builder`
+**Theme:** Turn VectorSync from a storage layer into an end-to-end retrieval service.
 
-### Approximate Nearest Neighbor (ANN) Search
-- HNSW index implementation using pgvector
-- IVFFlat index support
-- Configurable index type per collection
-- Background index rebuilding without downtime
+Right now, clients must pre-compute embeddings before inserting. v0.2 handles the full path from raw text to searchable vectors.
 
-### Async Ingestion Pipeline
-- Write-ahead log for ingestion
-- Redis-based queue for async processing
-- Retry logic with exponential backoff
-- Ingestion status tracking API
+### Text-to-Vector Pipeline
+- **Ingest endpoint** -- Accept raw text/documents, not just pre-computed vectors
+- **Chunking engine** -- Split documents into segments (fixed-size, sentence-based, recursive-character)
+- **Embedding orchestration** -- Call external model APIs (OpenAI, Cohere, local Ollama) to generate vectors
+- **Configurable per collection** -- Each collection specifies its chunking strategy and embedding model
+- **Async processing** -- Queue-based ingestion with status tracking for large document batches
+
+### HNSW Indexing
+- **Automatic HNSW index creation** on collection creation (pgvector)
+- **Tunable parameters** -- `m`, `ef_construction`, `ef_search` configurable per collection
+- **Index rebuild API** -- Rebuild index with new parameters without dropping data
+
+### Additional Distance Metrics
+- Euclidean distance and inner product alongside cosine similarity
+- Distance metric configurable per collection at creation time
+
+---
+
+## v0.3.0: Production Readiness
+
+**Theme:** Everything needed to run VectorSync in a real deployment.
+
+### Authentication
+- **API key authentication** -- Generate, rotate, and revoke keys
+- **Per-key scoping** -- Restrict keys to specific collections or operations
+- **Rate limiting** -- Per-key request limits with configurable windows
+
+### Observability
+- **Structured logging** with request tracing (OpenTelemetry)
+- **Prometheus metrics** -- Query latency histograms, throughput counters, pool utilization, index build progress
+- **Slow query detection** -- Log and flag queries exceeding configurable latency thresholds
+
+### Multi-tenancy
+- **Namespace isolation** -- Logical separation of collections per tenant
+- **Tenant-level quotas** -- Storage limits, document count caps, query rate limits
+- **Schema-based isolation** -- Each tenant gets its own PostgreSQL schema
+
+### Operational APIs
+- **Collection cloning** -- Duplicate a collection with or without data
+- **Data export** -- Stream documents out as JSONL for backup or migration
+- **Bulk re-embedding** -- Trigger re-embedding of all documents in a collection when switching models
+
+---
+
+## v0.4.0: Scale
+
+**Theme:** Handle datasets that don't fit in a single PostgreSQL instance.
+
+### Sharding
+- **Collection-level sharding** -- Distribute large collections across multiple PostgreSQL instances
+- **Scatter-gather search** -- Query all shards in parallel, merge and re-rank results
+- **Shard rebalancing** -- Move data between shards without downtime
+
+### Streaming Ingestion
+- **Bidirectional gRPC streams** -- Continuous document ingestion with backpressure
+- **Ordered delivery guarantees** -- Documents processed in submission order within a collection
+- **Webhook notifications** -- Push events on document insert, update, delete
 
 ### Advanced Search
-- Custom scoring functions (weighted hybrid search)
-- Multi-vector search (multiple query vectors)
-- Filtered ANN (metadata filters during ANN)
-- Explain API (why documents matched)
+- **Multi-vector queries** -- Search with multiple query vectors, merge results
+- **Filtered ANN** -- Apply metadata filters during index traversal, not after
+- **Sparse vector support** -- Hybrid dense + sparse search for better keyword precision
 
 ---
 
-## v0.3.0: Enterprise Features
-
-### Multi-Tenancy
-- Namespace isolation per tenant
-- Tenant-level quotas and rate limits
-- Per-tenant authentication
-- Data isolation guarantees
-
-### Authentication & Authorization
-- JWT token generation and validation
-- API key authentication
-- Role-based access control (RBAC)
-- Collection-level permissions
-
-### Operations
-- Backup and restore functionality
-- Point-in-time recovery
-- Collection snapshots and cloning
-- Data export (CSV, JSONL, Parquet)
-
-### Admin Dashboard
-- Web UI for monitoring
-- Collection management interface
-- Real-time metrics visualization
-- User and permission management
-
----
-
-## v0.4.0: Advanced Capabilities
-
-### Machine Learning Integration
-- Built-in embedding generation via external model APIs
-- Model version tracking per collection
-- Automatic re-embedding on model updates
-
-### Advanced Indexing
-- Product quantization (PQ) for compression
-- Disk-based ANN indexes for large datasets
-- GPU-accelerated search
-- Multiple distance metrics (Euclidean, dot product)
-
-### Streaming & Real-Time
-- Streaming inserts (bidirectional gRPC)
-- Real-time index updates
-- Change data capture (CDC) for external systems
-- Webhook notifications on document changes
-
----
-
-## Future Considerations
+## Framework Integrations
 
 <Info>
-These features are being evaluated for future releases based on community feedback.
+These are planned after v0.3 and will be published as separate packages.
 </Info>
 
-- Federated search across multiple VectorSync instances
-- Support for sparse vectors and hybrid dense-sparse search
-- Graph-based vector search
-- Integration with ML frameworks (LangChain, LlamaIndex)
-- Kubernetes Operator for automated deployment
-- Managed cloud service
+- **LangChain** -- VectorSync as a retriever backend
+- **LlamaIndex** -- VectorSync as a vector store
+- **TypeScript SDK** -- Already published, will be updated to match new APIs
+- **Python SDK** -- Native client library
 
 ---
 
 ## Contributing
 
-We welcome contributions! If you're interested in working on any of these features:
+Contributions are welcome. If you're interested in working on any of these features:
 
 1. Check the [GitHub Issues](https://github.com/Annany2002/VectorSync/issues) for existing discussions
 2. Open a new issue to discuss your proposed changes
