@@ -69,6 +69,8 @@ message ListDocumentsRequest {
     int32 limit = 2;
     // offset for pagination
     int32 offset = 3;
+    // include vector in response (omit for smaller response size, default: true for backward compatibility)
+    bool include_vector = 4;
 }
 
 // ListDocumentsResponse represents a response to list documents

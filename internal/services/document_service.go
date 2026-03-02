@@ -153,19 +153,16 @@ const (
 )
 
 // ListDocuments returns documents from a collection with pagination
-func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string, limit, offset int32) ([]models.Document, error) {
+func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string, limit, offset int32, includeVector bool) ([]models.Document, error) {
 	// check for empty collectionId
 	if collectionId == "" {
 		return nil, errors.New("collection_id is required")
 	}
 
-	// check if collection exists
-	_, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Check if collection exists (uses cache to avoid DB round-trip)
+	_, err := s.getCollectionDimension(ctx, collectionId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return nil, err
 	}
 
 	// Validate and normalize limit
@@ -186,7 +183,7 @@ func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string
 	// Note: We allow any non-negative offset for deep pagination
 
 	// fetch documents from repository
-	documents, err := s.documentRepo.List(ctx, collectionId, int(limit), int(offset))
+	documents, err := s.documentRepo.List(ctx, collectionId, int(limit), int(offset), includeVector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list documents: %w", err)
 	}

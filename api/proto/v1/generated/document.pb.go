@@ -361,7 +361,9 @@ type ListDocumentsRequest struct {
 	// number of documents to return
 	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	// offset for pagination
-	Offset        int32 `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	Offset int32 `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	// include vector in response (omit for smaller response size, default: true for backward compatibility)
+	IncludeVector bool `protobuf:"varint,4,opt,name=include_vector,json=includeVector,proto3" json:"include_vector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -415,6 +417,13 @@ func (x *ListDocumentsRequest) GetOffset() int32 {
 		return x.Offset
 	}
 	return 0
+}
+
+func (x *ListDocumentsRequest) GetIncludeVector() bool {
+	if x != nil {
+		return x.IncludeVector
+	}
+	return false
 }
 
 // ListDocumentsResponse represents a response to list documents
@@ -1437,11 +1446,12 @@ const file_document_proto_rawDesc = "" +
 	"\x13ListDocumentRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"F\n" +
 	"\x14ListDocumentResponse\x12.\n" +
-	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\"i\n" +
+	"\bdocument\x18\x01 \x01(\v2\x12.document.DocumentR\bdocument\"\x90\x01\n" +
 	"\x14ListDocumentsRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x03 \x01(\x05R\x06offset\"I\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\x12%\n" +
+	"\x0einclude_vector\x18\x04 \x01(\bR\rincludeVector\"I\n" +
 	"\x15ListDocumentsResponse\x120\n" +
 	"\tdocuments\x18\x01 \x03(\v2\x12.document.DocumentR\tdocuments\"'\n" +
 	"\x15DeleteDocumentRequest\x12\x0e\n" +

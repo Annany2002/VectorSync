@@ -2,8 +2,6 @@ package grpc
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -94,9 +92,10 @@ func (h *DocumentHandler) ListDocuments(ctx context.Context, req *pb.ListDocumen
 	collectionId := req.GetCollectionId()
 	limit := req.GetLimit()
 	offset := req.GetOffset()
+	includeVector := req.GetIncludeVector()
 
 	// Call service layer to fetch documents
-	documents, err := h.documentService.ListDocuments(ctx, collectionId, limit, offset)
+	documents, err := h.documentService.ListDocuments(ctx, collectionId, limit, offset, includeVector)
 	if err != nil {
 		return nil, err
 	}
@@ -156,27 +155,6 @@ func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDoc
 	metadataFilter := req.GetMetadataFilter()
 	minThreshold := req.GetMinThreshold()
 
-	// basic validtions
-	if collectionId == "" {
-		return nil, errors.New("collection_id cannot be empty")
-	}
-	if len(queryVector) == 0 {
-		return nil, errors.New("length of query vector must be greater than zero")
-	}
-
-	// check if collection exists or not
-	collection, err := h.collectionService.ListCollection(ctx, collectionId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("collection with id %s not found", collectionId)
-		}
-		return nil, err
-	}
-
-	if collection.VectorDimension != len(queryVector) {
-		return nil, errors.New("dimensions of query vectors and result vectors does not match")
-	}
-
 	// Extract top_k (default to 10 if not provided)
 	topK := req.GetTopK()
 	if topK == 0 {
@@ -192,7 +170,7 @@ func (h *DocumentHandler) SearchDocuments(ctx context.Context, req *pb.SearchDoc
 		}
 	}
 
-	// Call service layer to perform search
+	// Delegate to service layer (handles collection validation, dimension checks, and caching)
 	searchResults, err := h.documentService.SearchDocuments(
 		ctx,
 		collectionId,
@@ -229,23 +207,6 @@ func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSe
 	collectionId := req.GetCollectionId()
 	query := req.GetQuery()
 
-	// Basic validations
-	if collectionId == "" {
-		return nil, errors.New("collection_id cannot be empty")
-	}
-	if query == "" {
-		return nil, errors.New("query cannot be empty")
-	}
-
-	// check if collection exists or not
-	_, err := h.collectionService.ListCollection(ctx, collectionId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("collection with id %s not found", collectionId)
-		}
-		return nil, err
-	}
-
 	// Extract limit (default: 10 if not specified)
 	limit := req.GetLimit()
 	if limit == 0 {
@@ -258,7 +219,7 @@ func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSe
 		return nil, fmt.Errorf("invalid value of %f for rank, should be between 0.0 and 1.0", minRank)
 	}
 
-	// Call service layer to perform search
+	// Delegate to service layer (handles collection validation and caching)
 	searchResults, err := h.documentService.FullTextSearchDocuments(
 		ctx,
 		collectionId,
@@ -426,14 +387,6 @@ func (h *DocumentHandler) HybridSearch(ctx context.Context, req *pb.HybridSearch
 	textWeight := req.GetTextWeight()
 	includeVector := req.GetIncludeVector()
 	metadataFilter := req.GetMetadata()
-
-	// Basic validation
-	if collectionId == "" {
-		return nil, errors.New("collection_id cannot be empty")
-	}
-	if len(queryVector) == 0 && queryText == "" {
-		return nil, errors.New("at least one of query_vector or query_text is required")
-	}
 
 	// Default top_k if not provided
 	if topK == 0 {
