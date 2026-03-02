@@ -167,14 +167,20 @@ func stringToVector(s string) ([]float32, error) {
 }
 
 // List returns documents from a specific collection with pagination support
-func (r *DocumentRepo) List(ctx context.Context, collectionId string, limit, offset int) ([]models.Document, error) {
-	selectQuery := `
-		SELECT id, collection_id, vector, metadata, content, created_at, updated_at
+// When includeVector is false, the vector column is excluded to reduce payload size
+func (r *DocumentRepo) List(ctx context.Context, collectionId string, limit, offset int, includeVector bool) ([]models.Document, error) {
+	vectorColumn := ""
+	if includeVector {
+		vectorColumn = "vector, "
+	}
+
+	selectQuery := fmt.Sprintf(`
+		SELECT id, collection_id, %smetadata, content, created_at, updated_at
 		FROM documents
 		WHERE collection_id = $1
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3
-	`
+	`, vectorColumn)
 
 	rows, err := r.db.QueryContext(ctx, selectQuery, collectionId, limit, offset)
 	if err != nil {
@@ -187,26 +193,40 @@ func (r *DocumentRepo) List(ctx context.Context, collectionId string, limit, off
 	// Scan all rows one by one
 	for rows.Next() {
 		var document models.Document
-		var vectorStrReturned string
 		var metadataBytes []byte
 
-		err = rows.Scan(
-			&document.Id,
-			&document.CollectionId,
-			&vectorStrReturned,
-			&metadataBytes,
-			&document.Content,
-			&document.CreatedAt,
-			&document.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
+		if includeVector {
+			var vectorStrReturned string
+			err = rows.Scan(
+				&document.Id,
+				&document.CollectionId,
+				&vectorStrReturned,
+				&metadataBytes,
+				&document.Content,
+				&document.CreatedAt,
+				&document.UpdatedAt,
+			)
+			if err != nil {
+				return nil, err
+			}
 
-		// Parse vector string back to []float32
-		document.Vector, err = stringToVector(vectorStrReturned)
-		if err != nil {
-			return nil, err
+			// Parse vector string back to []float32
+			document.Vector, err = stringToVector(vectorStrReturned)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err = rows.Scan(
+				&document.Id,
+				&document.CollectionId,
+				&metadataBytes,
+				&document.Content,
+				&document.CreatedAt,
+				&document.UpdatedAt,
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		// Parse metadata JSON back to map
@@ -531,19 +551,22 @@ func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query s
 	return results, nil
 }
 
-// BatchInsert inserts a group of document inside a colletion
-// For now we will just use one atomic insert operation
-// Later on, we will modify this to handle errors, retries etc
+// BatchInsert inserts a group of documents inside a collection
+// Uses an explicit transaction to reduce WAL overhead and ensure atomicity
 func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, documents []models.Document) (int, []models.Document, error) {
-	// we will use string builder to efficiently create
-	// strings from many smaller strings and a custom array
-	// of contents to insert each document
+	// Start explicit transaction for atomic batch insert
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback() // no-op if tx.Commit() succeeds
+
+	// Build multi-value INSERT using string builder
 	var (
 		query    strings.Builder
 		contents []any
 	)
 
-	// build the initial query
 	query.WriteString("INSERT INTO documents (collection_id, vector, metadata, content) VALUES")
 
 	for i, v := range documents {
@@ -575,7 +598,7 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 	// docs represent the documents that are successfully inserted and are returned by query
 	var docs []models.Document
 
-	rows, err := r.db.QueryContext(ctx, query.String(), contents...)
+	rows, err := tx.QueryContext(ctx, query.String(), contents...)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -612,6 +635,11 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 	// Check for errors from iterating over rows
 	if err = rows.Err(); err != nil {
 		return 0, nil, err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return 0, nil, fmt.Errorf("failed to commit batch insert: %w", err)
 	}
 
 	return len(docs), docs, nil
