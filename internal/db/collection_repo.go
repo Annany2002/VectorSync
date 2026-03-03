@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"github.com/Annany2002/vector-sync/internal/models"
 )
@@ -19,14 +20,29 @@ func NewCollectionRepo(db *sql.DB) *CollectionRepo {
 	return &CollectionRepo{db: db}
 }
 
-// Create creates a new collection in the database
-func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any) (*models.Collection, error) {
-	// Only insert the fields we provide: name, vector_dim, metadata_schema
-	// document_count defaults to 0 in the database
+// distanceMetricOpsClass maps a distance metric to the pgvector HNSW operator class
+func distanceMetricOpsClass(metric string) string {
+	switch metric {
+	case "euclidean":
+		return "vector_l2_ops"
+	case "inner_product":
+		return "vector_ip_ops"
+	default: // "cosine"
+		return "vector_cosine_ops"
+	}
+}
+
+// Create creates a new collection and builds a partial HNSW index for it
+func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
+	// Default distance metric to cosine
+	if distanceMetric == "" {
+		distanceMetric = "cosine"
+	}
+
 	insertQuery := `
-		INSERT INTO collections (name, vector_dim, metadata_schema)
-		VALUES ($1, $2, $3)
-		RETURNING id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
+		INSERT INTO collections (name, vector_dim, metadata_schema, distance_metric)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, name, vector_dim, distance_metric, metadata_schema, created_at, updated_at, document_count
 	`
 
 	// Convert map to JSON for JSONB column
@@ -38,11 +54,11 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 	var collection models.Collection
 	var metadataBytes []byte
 
-	// Scan each field individually from the RETURNING clause
-	err = r.db.QueryRowContext(ctx, insertQuery, name, vectorDimension, metadataJSON).Scan(
+	err = r.db.QueryRowContext(ctx, insertQuery, name, vectorDimension, metadataJSON, distanceMetric).Scan(
 		&collection.Id,
 		&collection.Name,
 		&collection.VectorDimension,
+		&collection.DistanceMetric,
 		&metadataBytes,
 		&collection.CreatedAt,
 		&collection.UpdatedAt,
@@ -60,17 +76,58 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 		}
 	}
 
+	// Create per-collection partial HNSW index for vector search acceleration
+	opsClass := distanceMetricOpsClass(distanceMetric)
+	indexQuery := fmt.Sprintf(`
+		CREATE INDEX IF NOT EXISTS idx_hnsw_%s
+		ON documents USING hnsw (vector %s)
+		WITH (m = 16, ef_construction = 64)
+		WHERE collection_id = '%s'
+	`, collection.Id, opsClass, collection.Id)
+
+	// Index creation is best-effort; don't fail collection creation if it errors
+	// (e.g., no documents exist yet, which is fine -- index will be built on first insert)
+	_, _ = r.db.ExecContext(ctx, indexQuery)
+
 	return &collection, nil
 }
 
+// scanCollection scans a single collection row (shared by List, ListById, GetCollectionByName)
+func scanCollection(row interface{ Scan(dest ...any) error }) (*models.Collection, error) {
+	var collection models.Collection
+	var metadataBytes []byte
+
+	err := row.Scan(
+		&collection.Id,
+		&collection.Name,
+		&collection.VectorDimension,
+		&collection.DistanceMetric,
+		&metadataBytes,
+		&collection.CreatedAt,
+		&collection.UpdatedAt,
+		&collection.DocumentCount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(metadataBytes) > 0 {
+		err = json.Unmarshal(metadataBytes, &collection.MetadataSchema)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &collection, nil
+}
+
+const collectionColumns = "id, name, vector_dim, distance_metric, metadata_schema, created_at, updated_at, document_count"
+
 // List returns collections with pagination support
 func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.Collection, error) {
-	selectQuery := `
-		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
-		FROM collections
-		ORDER BY id
-		LIMIT $1 OFFSET $2
-	`
+	selectQuery := fmt.Sprintf(`
+		SELECT %s FROM collections ORDER BY id LIMIT $1 OFFSET $2
+	`, collectionColumns)
 
 	rows, err := r.db.QueryContext(ctx, selectQuery, limit, offset)
 	if err != nil {
@@ -79,34 +136,12 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 	defer rows.Close()
 
 	var collections []models.Collection
-
-	// Scan all rows one by one
 	for rows.Next() {
-		var collection models.Collection
-		var metadataBytes []byte
-
-		err = rows.Scan(
-			&collection.Id,
-			&collection.Name,
-			&collection.VectorDimension,
-			&metadataBytes,
-			&collection.CreatedAt,
-			&collection.UpdatedAt,
-			&collection.DocumentCount,
-		)
+		collection, err := scanCollection(rows)
 		if err != nil {
 			return nil, err
 		}
-
-		// Convert JSON bytes back to map
-		if len(metadataBytes) > 0 {
-			err = json.Unmarshal(metadataBytes, &collection.MetadataSchema)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		collections = append(collections, collection)
+		collections = append(collections, *collection)
 	}
 
 	return collections, nil
@@ -114,42 +149,16 @@ func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.
 
 // ListById returns a collection with an id
 func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*models.Collection, error) {
-	selectQuery := `
-		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
-		FROM collections
-		WHERE id = $1
-	`
-
-	var collection models.Collection
-	var metadataBytes []byte
-
-	// Query single row by Id
-	err := r.db.QueryRowContext(ctx, selectQuery, collectionId).Scan(
-		&collection.Id,
-		&collection.Name,
-		&collection.VectorDimension,
-		&metadataBytes,
-		&collection.CreatedAt,
-		&collection.UpdatedAt,
-		&collection.DocumentCount,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert JSON bytes back to map
-	if len(metadataBytes) > 0 {
-		err = json.Unmarshal(metadataBytes, &collection.MetadataSchema)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &collection, nil
+	selectQuery := fmt.Sprintf(`SELECT %s FROM collections WHERE id = $1`, collectionColumns)
+	return scanCollection(r.db.QueryRowContext(ctx, selectQuery, collectionId))
 }
 
-// DeleteById deletes a collection with an id
+// DeleteById deletes a collection with an id and drops its HNSW index
 func (r *CollectionRepo) DeleteById(ctx context.Context, collectionId string) (int64, error) {
+	// Drop the per-collection HNSW index (best-effort, ignore errors)
+	dropIndexQuery := fmt.Sprintf(`DROP INDEX IF EXISTS idx_hnsw_%s`, collectionId)
+	_, _ = r.db.ExecContext(ctx, dropIndexQuery)
+
 	deleteQuery := `
 		DELETE FROM collections WHERE id = $1
 		RETURNING document_count
@@ -166,36 +175,6 @@ func (r *CollectionRepo) DeleteById(ctx context.Context, collectionId string) (i
 
 // GetCollectionByName gets a collection by name
 func (r *CollectionRepo) GetCollectionByName(ctx context.Context, name string) (*models.Collection, error) {
-	// Selecting the columns we need
-	selectQuery := `
-		SELECT id, name, vector_dim, metadata_schema, created_at, updated_at, document_count
-		FROM collections
-		WHERE name = $1
-	`
-
-	var collection models.Collection
-	var metadataBytes []byte
-
-	err := r.db.QueryRowContext(ctx, selectQuery, name).Scan(
-		&collection.Id,
-		&collection.Name,
-		&collection.VectorDimension,
-		&metadataBytes,
-		&collection.CreatedAt,
-		&collection.UpdatedAt,
-		&collection.DocumentCount,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert JSON bytes to map
-	if len(metadataBytes) > 0 {
-		err = json.Unmarshal(metadataBytes, &collection.MetadataSchema)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &collection, nil
+	selectQuery := fmt.Sprintf(`SELECT %s FROM collections WHERE name = $1`, collectionColumns)
+	return scanCollection(r.db.QueryRowContext(ctx, selectQuery, name))
 }

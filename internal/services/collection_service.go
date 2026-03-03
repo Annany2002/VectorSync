@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/Annany2002/vector-sync/internal/db"
 	"github.com/Annany2002/vector-sync/internal/models"
@@ -20,7 +21,7 @@ func NewCollectionService(repo db.CollectionRepo) *CollectionService {
 }
 
 // CreateCollection creates a new collection
-func (s *CollectionService) CreateCollection(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any) (*models.Collection, error) {
+func (s *CollectionService) CreateCollection(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
 	// validate the input
 	if name == "" {
 		return nil, errors.New("name is required")
@@ -30,6 +31,17 @@ func (s *CollectionService) CreateCollection(ctx context.Context, name string, v
 	}
 	if metadataSchema == nil {
 		metadataSchema = make(map[string]any)
+	}
+
+	// Validate and default distance metric
+	if distanceMetric == "" {
+		distanceMetric = "cosine"
+	}
+	switch distanceMetric {
+	case "cosine", "euclidean", "inner_product":
+		// valid
+	default:
+		return nil, fmt.Errorf("invalid distance_metric %q: must be cosine, euclidean, or inner_product", distanceMetric)
 	}
 
 	// check if the collection already exists
@@ -46,7 +58,7 @@ func (s *CollectionService) CreateCollection(ctx context.Context, name string, v
 	}
 
 	// Collection doesn't exist - safe to create
-	collection, err := s.repo.Create(ctx, name, vectorDimension, metadataSchema)
+	collection, err := s.repo.Create(ctx, name, vectorDimension, metadataSchema, distanceMetric)
 	if err != nil {
 		return nil, err
 	}

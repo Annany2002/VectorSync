@@ -35,7 +35,7 @@ func (s *DocumentService) getCollectionDimension(ctx context.Context, collection
 		return int(dim), nil
 	}
 
-	// Cache miss: query DB
+	// Cache miss: query DB and populate cache
 	collection, err := s.collectionRepo.ListById(ctx, collectionId)
 	if err == sql.ErrNoRows {
 		return 0, fmt.Errorf("collection_id %s not found", collectionId)
@@ -44,9 +44,30 @@ func (s *DocumentService) getCollectionDimension(ctx context.Context, collection
 		return 0, fmt.Errorf("failed to fetch collection: %w", err)
 	}
 
-	// Populate cache for future calls
-	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension))
+	// Populate cache with both dimension and distance metric
+	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric)
 	return collection.VectorDimension, nil
+}
+
+// getCollectionDistanceMetric returns the distance metric for a collection,
+// using the cache to avoid repeated DB lookups.
+func (s *DocumentService) getCollectionDistanceMetric(ctx context.Context, collectionId string) (string, error) {
+	// Check cache first
+	if metric, ok := s.collectionCache.GetDistanceMetric(collectionId); ok && metric != "" {
+		return metric, nil
+	}
+
+	// Cache miss: query DB and populate cache
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric)
+	return collection.DistanceMetric, nil
 }
 
 // CreateDocument creates a new document
@@ -299,8 +320,14 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 		metadataFilter = make(map[string]any)
 	}
 
+	// Get distance metric for this collection (uses cache)
+	distanceMetric, err := s.getCollectionDistanceMetric(ctx, collectionId)
+	if err != nil {
+		return nil, err
+	}
+
 	// Perform search via repository
-	results, err := s.documentRepo.Search(ctx, collectionId, queryVector, int(topK), metadataFilter, minThreshold, includeVector)
+	results, err := s.documentRepo.Search(ctx, collectionId, queryVector, int(topK), metadataFilter, minThreshold, includeVector, distanceMetric)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search documents: %w", err)
 	}
@@ -494,8 +521,14 @@ func (s *DocumentService) HybridSearchDocuments(ctx context.Context, collectionI
 		metadataFilter = make(map[string]any)
 	}
 
+	// Get distance metric for this collection (uses cache)
+	distanceMetric, err := s.getCollectionDistanceMetric(ctx, collectionId)
+	if err != nil {
+		return nil, err
+	}
+
 	// Perform hybrid search via repository
-	results, err := s.documentRepo.HybridSearch(ctx, collectionId, queryText, queryVector, int(topK), metadataFilter, vectorWeight, textWeight, includeVector)
+	results, err := s.documentRepo.HybridSearch(ctx, collectionId, queryText, queryVector, int(topK), metadataFilter, vectorWeight, textWeight, includeVector, distanceMetric)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform hybrid search: %w", err)
 	}

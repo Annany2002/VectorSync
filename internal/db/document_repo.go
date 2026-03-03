@@ -12,6 +12,32 @@ import (
 	"github.com/lib/pq"
 )
 
+// distanceOperator returns the pgvector operator for a given distance metric.
+// Cosine: <=> (cosine distance), Euclidean: <-> (L2 distance), Inner Product: <#> (negative inner product)
+func distanceOperator(metric string) string {
+	switch metric {
+	case "euclidean":
+		return "<->"
+	case "inner_product":
+		return "<#>"
+	default: // "cosine"
+		return "<=>"
+	}
+}
+
+// similarityExpression returns the SQL expression to convert distance to similarity score.
+// For cosine: 1 - distance. For euclidean: 1 / (1 + distance). For inner product: -1 * distance (pgvector returns negative).
+func similarityExpression(metric, distExpr string) string {
+	switch metric {
+	case "euclidean":
+		return fmt.Sprintf("1.0 / (1.0 + (%s))", distExpr)
+	case "inner_product":
+		return fmt.Sprintf("(%s) * -1", distExpr)
+	default: // "cosine"
+		return fmt.Sprintf("1 - (%s)", distExpr)
+	}
+}
+
 type DocumentRepo struct {
 	db *sql.DB
 }
@@ -321,18 +347,19 @@ type SearchResult struct {
 	Score    float32
 }
 
-// Search performs vector similarity search using cosine similarity
+// Search performs vector similarity search using the collection's configured distance metric
 // Returns top-K results ordered by similarity (highest first)
 // Supports optional metadata filtering and minimum similarity threshold
 // When includeVector is false, the vector column is excluded from the SQL SELECT
-// to avoid transferring ~3KB per result and skipping deserialization
-func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVector []float32, topK int, metadataFilter map[string]any, minThreshold float32, includeVector bool) ([]SearchResult, error) {
+func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVector []float32, topK int, metadataFilter map[string]any, minThreshold float32, includeVector bool, distanceMetric string) ([]SearchResult, error) {
 	// Convert query vector to PostgreSQL format
 	vectorStr := vectorToString(queryVector)
 
-	// Build the base query with cosine similarity
-	// pgvector's <=> operator is cosine distance (0 = identical, 2 = opposite)
-	// We convert to similarity: 1 - distance = similarity (1 = identical, -1 = opposite)
+	// Get the pgvector operator and similarity expression for this metric
+	op := distanceOperator(distanceMetric)
+	distExpr := fmt.Sprintf("vector %s $1::vector", op)
+	simExpr := similarityExpression(distanceMetric, distExpr)
+
 	vectorColumn := ""
 	if includeVector {
 		vectorColumn = "vector, "
@@ -340,10 +367,10 @@ func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVec
 	query := fmt.Sprintf(`
 		SELECT 
 			id, collection_id, %smetadata, content, created_at, updated_at,
-			1 - (vector <=> $1::vector) AS similarity
+			%s AS similarity
 		FROM documents
 		WHERE collection_id = $2
-	`, vectorColumn)
+	`, vectorColumn, simExpr)
 
 	args := []any{vectorStr, collectionId}
 	argIndex := 3
@@ -351,11 +378,7 @@ func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVec
 	// Add metadata filtering if provided
 	if len(metadataFilter) > 0 {
 		for key, value := range metadataFilter {
-			// Use JSONB containment operator @> for metadata filtering
-			// metadata @> '{"key": "value"}' checks if metadata contains the key-value pair
 			query += fmt.Sprintf(" AND metadata @> $%d::jsonb", argIndex)
-
-			// Convert single key-value to JSONB format: {"key": "value"}
 			filterJSON, err := json.Marshal(map[string]any{key: value})
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal metadata filter: %w", err)
@@ -367,13 +390,13 @@ func (r *DocumentRepo) Search(ctx context.Context, collectionId string, queryVec
 
 	// Add minimum threshold filtering if provided
 	if minThreshold > 0 {
-		query += fmt.Sprintf(" AND (1 - (vector <=> $1::vector)) >= $%d", argIndex)
+		query += fmt.Sprintf(" AND (%s) >= $%d", simExpr, argIndex)
 		args = append(args, minThreshold)
 		argIndex++
 	}
 
-	// Order by similarity (highest first) and limit to top-K
-	query += fmt.Sprintf(" ORDER BY vector <=> $1::vector LIMIT $%d", argIndex)
+	// Order by distance (ascending = most similar first) and limit to top-K
+	query += fmt.Sprintf(" ORDER BY %s LIMIT $%d", distExpr, argIndex)
 	args = append(args, topK)
 
 	// Execute query
@@ -704,9 +727,9 @@ func (r *DocumentRepo) BatchDelete(ctx context.Context, collectionId string, doc
 
 // HybridSearch performs a combined vector similarity and full-text search
 // Returns top-K results ordered by weighted combined score (highest first)
-// Score = (textWeight * fts_rank) + (vectorWeight * cosine_similarity)
+// Score = (textWeight * fts_rank) + (vectorWeight * vector_similarity)
 // Supports optional metadata filtering via JSONB containment
-func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText string, queryVector []float32, topK int, metadataFilter map[string]any, vectorWeight, textWeight float32, includeVector bool) ([]SearchResult, error) {
+func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText string, queryVector []float32, topK int, metadataFilter map[string]any, vectorWeight, textWeight float32, includeVector bool, distanceMetric string) ([]SearchResult, error) {
 	// Convert query vector to PostgreSQL format
 	vectorStr := vectorToString(queryVector)
 
@@ -715,39 +738,42 @@ func (r *DocumentRepo) HybridSearch(ctx context.Context, collectionId, queryText
 		vectorColumn = "vector, "
 	}
 
-	// Build CTE that computes both scores for each matching document:
-	// - fts_score: PostgreSQL ts_rank for full-text relevance (0 if no text query)
-	// - vector_score: cosine similarity (1 - cosine_distance)
-	// Text filter is only applied when queryText is provided
+	// Get the pgvector operator and similarity expression for this metric
+	op := distanceOperator(distanceMetric)
+
 	var hybrid string
 	var args []any
 	var argIndex int
 
 	if queryText != "" {
-		// Both text and vector search
+		distExpr := fmt.Sprintf("vector %s $3::vector", op)
+		simExpr := similarityExpression(distanceMetric, distExpr)
+
 		hybrid = fmt.Sprintf(`
 		WITH scored AS (
 			SELECT id, collection_id, %smetadata, content, created_at, updated_at,
 				ts_rank(to_tsvector('english', COALESCE(content, '')),
 				plainto_tsquery('english', $1)) as fts_score,
-				1 - (vector <=> $3::vector) AS vector_score
+				%s AS vector_score
 			FROM documents
 			WHERE collection_id = $2 
 				AND to_tsvector('english', COALESCE(content, ''))
 					@@ plainto_tsquery('english', $1)
-		`, vectorColumn)
+		`, vectorColumn, simExpr)
 		args = []any{queryText, collectionId, vectorStr}
 		argIndex = 4
 	} else {
-		// Vector-only search (no text filter)
+		distExpr := fmt.Sprintf("vector %s $2::vector", op)
+		simExpr := similarityExpression(distanceMetric, distExpr)
+
 		hybrid = fmt.Sprintf(`
 		WITH scored AS (
 			SELECT id, collection_id, %smetadata, content, created_at, updated_at,
 				0::float as fts_score,
-				1 - (vector <=> $2::vector) AS vector_score
+				%s AS vector_score
 			FROM documents
 			WHERE collection_id = $1
-		`, vectorColumn)
+		`, vectorColumn, simExpr)
 		args = []any{collectionId, vectorStr}
 		argIndex = 3
 	}

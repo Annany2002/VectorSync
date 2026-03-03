@@ -27,6 +27,7 @@ func (h *CollectionHandler) CreateCollection(ctx context.Context, req *pb.Create
 	// Extract data from gRPC request
 	name := req.GetName()
 	vectorDimension := req.GetVectorDimension()
+	distanceMetric := req.GetDistanceMetric()
 
 	// Convert protobuf map[string]*Struct to map[string]any
 	var metadataSchema map[string]any
@@ -38,7 +39,7 @@ func (h *CollectionHandler) CreateCollection(ctx context.Context, req *pb.Create
 	}
 
 	// Call service layer to create the collection
-	collection, err := h.collectionService.CreateCollection(ctx, name, vectorDimension, metadataSchema)
+	collection, err := h.collectionService.CreateCollection(ctx, name, vectorDimension, metadataSchema, distanceMetric)
 	if err != nil {
 		return nil, err
 	}
@@ -132,5 +133,6 @@ func convertToProtoCollection(c *models.Collection) *pb.Collection {
 		VectorDimension: int32(c.VectorDimension),
 		MetadataSchema:  metadataSchemaProto,
 		DocumentCount:   c.DocumentCount,
+		DistanceMetric:  c.DistanceMetric,
 	}
 }

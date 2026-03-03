@@ -7,6 +7,7 @@ type Collection struct {
 	Id              string         `json:"id" db:"id"`
 	Name            string         `json:"name" db:"name"`
 	VectorDimension int            `json:"vector_dimension" db:"vector_dim"`
+	DistanceMetric  string         `json:"distance_metric" db:"distance_metric"`
 	MetadataSchema  map[string]any `json:"metadata_schema,omitempty" db:"metadata_schema"`
 	CreatedAt       time.Time      `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at" db:"updated_at"`

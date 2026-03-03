@@ -26,6 +26,8 @@ message Collection {
     map<string, google.protobuf.Struct> metadata_schema = 6;
     // number of documents in this collection
     int64 document_count = 7;
+    // distance metric for vector search (cosine, euclidean, inner_product)
+    string distance_metric = 8;
 }
 
 
@@ -37,6 +39,8 @@ message CreateCollectionRequest {
     int32 vector_dimension = 2;
     // schema for metadata
     map<string, google.protobuf.Struct> metadata_schema = 3;
+    // distance metric for vector search (cosine, euclidean, inner_product; default: cosine)
+    string distance_metric = 4;
 }
 
 // CreateCollectionResponse represents a response to create a collection
