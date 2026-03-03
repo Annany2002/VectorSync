@@ -11,7 +11,7 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 
 <CardGroup cols={2}>
   <Card title="Vector Similarity Search" icon="magnifying-glass">
-    Cosine similarity search with configurable top-K results
+    Cosine, Euclidean, and Inner Product distance with configurable top-K
   </Card>
   <Card title="Full-Text Search" icon="font">
     Keyword search on document content with relevance ranking
@@ -31,6 +31,9 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
   <Card title="Batch Operations" icon="layer-group">
     Insert and delete up to 100 documents per request
   </Card>
+  <Card title="HNSW Indexing" icon="bolt">
+    Automatic per-collection HNSW index for fast approximate nearest neighbor search
+  </Card>
 </CardGroup>
 
 ## Current Capabilities (v0.1.0-alpha)
@@ -46,6 +49,8 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 | Metadata Filtering | Complete |
 | Health Checks | Complete |
 | Graceful Shutdown | Complete |
+| HNSW Indexing | Complete |
+| Distance Metrics (cosine, euclidean, inner_product) | Complete |
 | gRPC API | Complete |
 | HTTP/JSON API | Complete |
 

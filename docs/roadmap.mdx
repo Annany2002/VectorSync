@@ -34,6 +34,12 @@ Core vector search API with storage, retrieval, and three search modes.
   <Card title="Dual API" icon="check">
     gRPC (6309) and HTTP/JSON (8080) via grpc-gateway
   </Card>
+  <Card title="HNSW Indexing" icon="check">
+    Automatic per-collection HNSW partial indexes for fast approximate nearest neighbor search
+  </Card>
+  <Card title="Distance Metrics" icon="check">
+    Configurable per collection: cosine, euclidean, or inner_product
+  </Card>
 </CardGroup>
 
 ---
@@ -48,17 +54,6 @@ Right now, clients must pre-compute embeddings before inserting. v0.2 handles th
 - **Ingest endpoint** -- Accept raw text/documents, not just pre-computed vectors
 - **Chunking engine** -- Split documents into segments (fixed-size, sentence-based, recursive-character)
 - **Embedding orchestration** -- Call external model APIs (OpenAI, Cohere, local Ollama) to generate vectors
-- **Configurable per collection** -- Each collection specifies its chunking strategy and embedding model
-- **Async processing** -- Queue-based ingestion with status tracking for large document batches
-
-### HNSW Indexing
-- **Automatic HNSW index creation** on collection creation (pgvector)
-- **Tunable parameters** -- `m`, `ef_construction`, `ef_search` configurable per collection
-- **Index rebuild API** -- Rebuild index with new parameters without dropping data
-
-### Additional Distance Metrics
-- Euclidean distance and inner product alongside cosine similarity
-- Distance metric configurable per collection at creation time
 
 ---
 

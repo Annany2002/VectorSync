@@ -39,6 +39,7 @@ description: 'Get VectorSync running in 5 minutes'
     psql $DB_URL -f migrations/001_enable_pgvector.up.sql
     psql $DB_URL -f migrations/002_create_collections.up.sql
     psql $DB_URL -f migrations/003_create_documents.up.sql
+    psql $DB_URL -f migrations/004_add_distance_metric.up.sql
 
     # Start the server
     go run cmd/vector-sync/main.go
@@ -55,7 +56,8 @@ curl -X POST http://localhost:8080/api/v1/collections \
   -H "Content-Type: application/json" \
   -d '{
     "name": "my_embeddings",
-    "vector_dimension": 3
+    "vector_dimension": 3,
+    "distance_metric": "cosine"
   }'
 ```
 

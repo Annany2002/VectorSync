@@ -14,9 +14,11 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 
 ## Features
 
-- **Vector Similarity Search** -- Cosine similarity with configurable top-K and minimum threshold
+- **Vector Similarity Search** -- Cosine, Euclidean, and Inner Product distance with configurable top-K and minimum threshold
+- **HNSW Indexing** -- Automatic per-collection HNSW index creation via pgvector for fast approximate nearest neighbor search
 - **Full-Text Search** -- PostgreSQL tsvector-based keyword search with relevance ranking
 - **Hybrid Search** -- Weighted combination of vector similarity and full-text search
+- **Configurable Distance Metrics** -- Choose `cosine`, `euclidean`, or `inner_product` per collection at creation time
 - **Dual API** -- Native gRPC (port 6309) and HTTP/JSON via grpc-gateway (port 8080)
 - **Collection Management** -- Organize embeddings by collection with fixed dimensions
 - **CRUD + Upsert** -- Full document lifecycle with atomic insert-or-update
@@ -38,7 +40,7 @@ Benchmarked with 768-dimension vectors on PostgreSQL with pgvector:
 | Full-Text Search | ~7.5 ops/sec | ~134ms |
 | Concurrent Inserts (15 clients) | ~47 ops/sec | ~219ms |
 
-Key optimizations: statement-level triggers for document counting, in-memory collection dimension cache, connection pooling (25 open / 10 idle), and explicit transactions for batch operations.
+Key optimizations: per-collection HNSW indexes, statement-level triggers for document counting, in-memory collection dimension cache, connection pooling (25 open / 10 idle), and explicit transactions for batch operations.
 
 ## Quick Start
 
@@ -51,7 +53,7 @@ docker-compose up -d
 # Create a collection
 curl -X POST http://localhost:8080/api/v1/collections \
   -H "Content-Type: application/json" \
-  -d '{"name": "my_embeddings", "vector_dimension": 768}'
+  -d '{"name": "my_embeddings", "vector_dimension": 768, "distance_metric": "cosine"}'
 
 # Insert a document
 curl -X POST http://localhost:8080/api/v1/documents \
