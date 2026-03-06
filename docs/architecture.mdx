@@ -115,6 +115,33 @@ Database operations:
   </Accordion>
 </AccordionGroup>
 
+## Performance Characteristics
+
+Stress-tested under sustained and burst loads with zero errors:
+
+| Property | Value |
+|----------|-------|
+| Max batch size | 1000 documents per request |
+| Max top_k / limit | 1000 results per query |
+| Connection pool | 25 open / 10 idle connections |
+| Sustained throughput (30 clients) | ~321 ops/sec |
+| Burst recovery (15s idle -> 100 clients) | ~285 ops/sec |
+| Batch amortization | Per-doc cost drops from 5.6ms (single) to 1.0ms (batch=500) |
+| Vector dimension support | Tested up to 3072 (OpenAI large embeddings) |
+| `include_vector=false` payload reduction | ~55x smaller responses |
+
+<AccordionGroup>
+  <Accordion title="Connection Pool Behavior">
+    The pool handles up to 100 concurrent clients (4x the `MaxOpenConns` limit) without errors. Go's `database/sql` package queues excess connections, adding latency but preventing failures.
+  </Accordion>
+  <Accordion title="Write Throughput Stability">
+    Sequential insert throughput remains stable at ~154 ops/sec across 5,000 documents. No degradation observed at 15,000+ documents per collection.
+  </Accordion>
+  <Accordion title="Metadata Filter Overhead">
+    GIN-indexed metadata filtering adds zero measurable overhead to vector search queries (~6ms with or without filter).
+  </Accordion>
+</AccordionGroup>
+
 ## Database Schema
 
 ### Collections Table

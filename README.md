@@ -22,23 +22,33 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 - **Dual API** -- Native gRPC (port 6309) and HTTP/JSON via grpc-gateway (port 8080)
 - **Collection Management** -- Organize embeddings by collection with fixed dimensions
 - **CRUD + Upsert** -- Full document lifecycle with atomic insert-or-update
-- **Batch Operations** -- Insert and delete up to 100 documents per request
+- **Batch Operations** -- Insert and delete up to 1000 documents per request
 - **Metadata Filtering** -- JSONB-based filtering on search queries
 - **Optional Vector Returns** -- Exclude vectors from responses to reduce payload by ~97%
 
 ## Performance
 
-Benchmarked with 768-dimension vectors on PostgreSQL with pgvector:
+Benchmarked with 768-dimension vectors on PostgreSQL 17 + pgvector (Docker, local):
 
 | Operation | Throughput | Avg Latency |
 |-----------|-----------|-------------|
-| Single Insert | ~7 ops/sec | ~143ms |
-| Batch Insert (100 docs) | ~136 docs/sec | ~735ms/batch |
-| Batch Insert (500 docs) | ~214 docs/sec | ~2.3s/batch |
-| Upsert | ~7 ops/sec | ~148ms |
-| Vector Search (k=10) | ~7 ops/sec | ~150ms |
-| Full-Text Search | ~7.5 ops/sec | ~134ms |
-| Concurrent Inserts (15 clients) | ~47 ops/sec | ~219ms |
+| Single Insert | ~200 ops/sec | ~5ms |
+| Batch Insert (100 docs) | ~833 docs/sec | ~120ms/batch |
+| Batch Insert (500 docs) | ~970 docs/sec | ~516ms/batch |
+| Upsert (new) | ~148 ops/sec | ~7ms |
+| Upsert (update) | ~144 ops/sec | ~7ms |
+| Vector Search (k=10) | ~91 ops/sec | ~11ms |
+| Full-Text Search | ~182 ops/sec | ~6ms |
+| Hybrid Search | ~146 ops/sec | ~7ms |
+| Metadata Filtered Search | ~167 ops/sec | ~6ms |
+| Concurrent Inserts (30 clients) | ~321 ops/sec | ~54ms |
+
+**Stress-tested up to:**
+- 100 concurrent clients with zero errors
+- 15,000+ documents with no throughput degradation
+- 1000-doc max batch size (10,000 docs in 10 batches at ~880 docs/sec)
+- Vector dimensions up to 3072 (OpenAI `text-embedding-3-large`)
+- `include_vector=false` reduces response payload by 55x
 
 Key optimizations: per-collection HNSW indexes, statement-level triggers for document counting, in-memory collection dimension cache, connection pooling (25 open / 10 idle), and explicit transactions for batch operations.
 

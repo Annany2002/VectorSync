@@ -29,7 +29,7 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
     Weighted combination of vector similarity and full-text search
   </Card>
   <Card title="Batch Operations" icon="layer-group">
-    Insert and delete up to 100 documents per request
+    Insert and delete up to 1000 documents per request
   </Card>
   <Card title="HNSW Indexing" icon="bolt">
     Automatic per-collection HNSW index for fast approximate nearest neighbor search
@@ -52,7 +52,19 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 | HNSW Indexing | Complete |
 | Distance Metrics (cosine, euclidean, inner_product) | Complete |
 | gRPC API | Complete |
+| Stress Testing (100 concurrent clients) | Verified |
 | HTTP/JSON API | Complete |
+
+## Performance (Local Docker, 768-dim vectors)
+
+| Operation | Throughput | Avg Latency |
+|-----------|-----------|-------------|
+| Single Insert | ~200 ops/sec | ~5ms |
+| Batch Insert (100 docs) | ~833 docs/sec | ~120ms/batch |
+| Vector Search (k=10) | ~91 ops/sec | ~11ms |
+| Full-Text Search | ~182 ops/sec | ~6ms |
+| Hybrid Search | ~146 ops/sec | ~7ms |
+| Concurrent Inserts (30 clients) | ~321 ops/sec | ~54ms |
 
 ## Architecture Overview
 

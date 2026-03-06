@@ -13,6 +13,7 @@ Migrations are numbered and come in pairs:
 1. **001_enable_pgvector** - Enables the pgvector extension for vector operations
 2. **002_create_collections** - Creates the collections table with auto-updating timestamps
 3. **003_create_documents** - Creates the documents table with vector column and indexes
+4. **004_add_distance_metric** - Adds configurable distance metric column to collections
 
 ## Prerequisites
 
