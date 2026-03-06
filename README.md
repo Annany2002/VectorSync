@@ -58,6 +58,11 @@ Key optimizations: per-collection HNSW indexes, statement-level triggers for doc
 # Clone and start
 git clone https://github.com/Annany2002/VectorSync.git
 cd VectorSync
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your database credentials (optional - defaults work with Docker Compose)
+
 docker-compose up -d
 
 # Create a collection

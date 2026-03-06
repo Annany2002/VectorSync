@@ -15,9 +15,8 @@ var (
 )
 
 func Connect() (*sql.DB, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
+	// Load .env if present (optional in containers where env vars are injected directly)
+	_ = godotenv.Load()
 
 	db, err := sql.Open("postgres", os.Getenv("DB_URL"))
 	if err != nil {
