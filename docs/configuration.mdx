@@ -20,8 +20,8 @@ VectorSync is configured via environment variables. Create a `.env` file in the 
 | `GRPC_PORT` | `6309` | gRPC server port |
 | `HTTP_PORT` | `8080` | HTTP gateway port |
 | `LOG_LEVEL` | `info` | Logging level (debug, info, warn, error) |
-| `MAX_DB_CONNECTIONS` | `25` | Maximum database connections |
-| `IDLE_DB_CONNECTIONS` | `10` | Idle database connections |
+| `MAX_DB_CONNECTIONS` | `50` | Maximum database connections |
+| `IDLE_DB_CONNECTIONS` | `25` | Idle database connections |
 
 ## Example Configuration
 
@@ -37,8 +37,8 @@ HTTP_PORT=8080
 LOG_LEVEL=info
 
 # Database pool
-MAX_DB_CONNECTIONS=25
-IDLE_DB_CONNECTIONS=10
+MAX_DB_CONNECTIONS=50
+IDLE_DB_CONNECTIONS=25
 ```
 
 ## Database Setup
@@ -70,6 +70,7 @@ psql $DB_URL -f migrations/001_enable_pgvector.up.sql
 psql $DB_URL -f migrations/002_create_collections.up.sql
 psql $DB_URL -f migrations/003_create_documents.up.sql
 psql $DB_URL -f migrations/004_add_distance_metric.up.sql
+psql $DB_URL -f migrations/005_fix_fts_index_size.up.sql
 ```
 
 ## Makefile Commands
