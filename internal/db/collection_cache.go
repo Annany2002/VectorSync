@@ -68,6 +68,18 @@ func (c *CollectionCache) GetDistanceMetric(collectionId string) (string, bool) 
 	return info.distanceMetric, exists
 }
 
+// GetInfo returns both the vector dimension and distance metric for a collection
+// under a single read-lock acquisition, halving lock overhead on the hot path
+// compared to calling GetDimension and GetDistanceMetric separately.
+// Returns (dimension, metric, true) if found, (0, "", false) if not cached.
+func (c *CollectionCache) GetInfo(collectionId string) (int32, string, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	info, exists := c.cache[collectionId]
+	return info.dimension, info.distanceMetric, exists
+}
+
 // Delete removes a collection from the cache
 func (c *CollectionCache) Delete(collectionId string) {
 	c.mu.Lock()

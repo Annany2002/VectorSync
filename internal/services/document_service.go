@@ -27,47 +27,26 @@ func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.Collecti
 	}
 }
 
-// getCollectionDimension returns the vector dimension for a collection,
-// using the cache to avoid repeated DB lookups.
-func (s *DocumentService) getCollectionDimension(ctx context.Context, collectionId string) (int, error) {
-	// Check cache first
-	if dim, ok := s.collectionCache.GetDimension(collectionId); ok {
-		return int(dim), nil
+// getCollectionInfo returns the vector dimension and distance metric for a collection
+// under a single cache read-lock. On a cache miss it queries the DB once and
+// populates both fields. This replaces the previous two-helper pattern that
+// acquired the read-lock twice per request on the hot search path.
+func (s *DocumentService) getCollectionInfo(ctx context.Context, collectionId string) (int, string, error) {
+	if dim, metric, ok := s.collectionCache.GetInfo(collectionId); ok {
+		return int(dim), metric, nil
 	}
 
 	// Cache miss: query DB and populate cache
 	collection, err := s.collectionRepo.ListById(ctx, collectionId)
 	if err == sql.ErrNoRows {
-		return 0, fmt.Errorf("collection_id %s not found", collectionId)
+		return 0, "", fmt.Errorf("collection_id %s not found", collectionId)
 	}
 	if err != nil {
-		return 0, fmt.Errorf("failed to fetch collection: %w", err)
-	}
-
-	// Populate cache with both dimension and distance metric
-	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric)
-	return collection.VectorDimension, nil
-}
-
-// getCollectionDistanceMetric returns the distance metric for a collection,
-// using the cache to avoid repeated DB lookups.
-func (s *DocumentService) getCollectionDistanceMetric(ctx context.Context, collectionId string) (string, error) {
-	// Check cache first
-	if metric, ok := s.collectionCache.GetDistanceMetric(collectionId); ok && metric != "" {
-		return metric, nil
-	}
-
-	// Cache miss: query DB and populate cache
-	collection, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("collection_id %s not found", collectionId)
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch collection: %w", err)
+		return 0, "", fmt.Errorf("failed to fetch collection: %w", err)
 	}
 
 	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric)
-	return collection.DistanceMetric, nil
+	return collection.VectorDimension, collection.DistanceMetric, nil
 }
 
 // CreateDocument creates a new document
@@ -84,7 +63,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, collectionId, cont
 	}
 
 	// Validate collection exists and get dimension (uses cache)
-	dimension, err := s.getCollectionDimension(ctx, collectionId)
+	dimension, _, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +113,7 @@ func (s *DocumentService) UpsertDocument(ctx context.Context, documentId, collec
 	}
 
 	// Validate collection exists and get dimension (uses cache)
-	dimension, err := s.getCollectionDimension(ctx, collectionId)
+	dimension, _, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +160,7 @@ func (s *DocumentService) ListDocuments(ctx context.Context, collectionId string
 	}
 
 	// Check if collection exists (uses cache to avoid DB round-trip)
-	_, err := s.getCollectionDimension(ctx, collectionId)
+	_, _, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return nil, err
 	}
@@ -274,8 +253,8 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 		return nil, errors.New("query_vector cannot be empty")
 	}
 
-	// Validate collection exists and get dimension (uses cache)
-	dimension, err := s.getCollectionDimension(ctx, collectionId)
+	// Validate collection exists; get dimension + distance metric in one cache lookup
+	dimension, distanceMetric, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return nil, err
 	}
@@ -320,12 +299,6 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, collectionId stri
 		metadataFilter = make(map[string]any)
 	}
 
-	// Get distance metric for this collection (uses cache)
-	distanceMetric, err := s.getCollectionDistanceMetric(ctx, collectionId)
-	if err != nil {
-		return nil, err
-	}
-
 	// Perform search via repository
 	results, err := s.documentRepo.Search(ctx, collectionId, queryVector, int(topK), metadataFilter, minThreshold, includeVector, distanceMetric)
 	if err != nil {
@@ -349,7 +322,7 @@ func (s *DocumentService) FullTextSearchDocuments(ctx context.Context, collectio
 	}
 
 	// Check if collection exists (uses cache)
-	_, err := s.getCollectionDimension(ctx, collectionId)
+	_, _, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return nil, err
 	}
@@ -389,7 +362,7 @@ func (s *DocumentService) BatchInsert(ctx context.Context, collectionId string, 
 	}
 
 	// Validate collection exists and get dimension (uses cache)
-	dimension, err := s.getCollectionDimension(ctx, collectionId)
+	dimension, _, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -460,8 +433,8 @@ func (s *DocumentService) HybridSearchDocuments(ctx context.Context, collectionI
 		return nil, errors.New("at least one of query_vector or query_text is required")
 	}
 
-	// Validate collection exists and get dimension (uses cache)
-	dimension, err := s.getCollectionDimension(ctx, collectionId)
+	// Validate collection exists; get dimension + distance metric in one cache lookup
+	dimension, distanceMetric, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
 		return nil, err
 	}
@@ -519,12 +492,6 @@ func (s *DocumentService) HybridSearchDocuments(ctx context.Context, collectionI
 	// Initialize metadata filter if nil
 	if metadataFilter == nil {
 		metadataFilter = make(map[string]any)
-	}
-
-	// Get distance metric for this collection (uses cache)
-	distanceMetric, err := s.getCollectionDistanceMetric(ctx, collectionId)
-	if err != nil {
-		return nil, err
 	}
 
 	// Perform hybrid search via repository
