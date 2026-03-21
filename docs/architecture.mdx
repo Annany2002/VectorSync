@@ -102,7 +102,7 @@ Database operations:
     All writes persist to PostgreSQL first, ensuring durability. The database is the source of truth.
   </Accordion>
   <Accordion title="pgvector Integration">
-    Uses PostgreSQL's pgvector extension for native vector operations and cosine similarity calculations.
+    Uses PostgreSQL's pgvector extension for native vector operations. Supports cosine distance (`<=>`), Euclidean distance (`<->`), and negative inner product (`<#>`) with per-collection HNSW indexes.
   </Accordion>
   <Accordion title="JSONB Metadata">
     Flexible metadata storage with GIN indexing for efficient filtering queries.
@@ -112,6 +112,15 @@ Database operations:
   </Accordion>
   <Accordion title="Graceful Shutdown">
     Proper signal handling (SIGINT, SIGTERM) with ordered shutdown of HTTP, gRPC, and database connections.
+  </Accordion>
+  <Accordion title="Collection Cache">
+    In-memory RWMutex cache stores each collection's vector dimension and distance metric. A single-lock `GetInfo()` call returns both fields under one read-lock, halving lock overhead on the hot search path.
+  </Accordion>
+  <Accordion title="Async HNSW Index Creation">
+    Per-collection HNSW indexes are created in a background goroutine so collection creates return immediately without blocking on the DDL statement.
+  </Accordion>
+  <Accordion title="Batch Insert Optimizations">
+    Batch inserts use `SET LOCAL synchronous_commit = OFF` to skip WAL fsync wait, pre-allocated argument slices, and `sync.Pool`-recycled string builders for vector serialization.
   </Accordion>
 </AccordionGroup>
 
@@ -123,19 +132,19 @@ Stress-tested under sustained and burst loads with zero errors:
 |----------|-------|
 | Max batch size | 1000 documents per request |
 | Max top_k / limit | 1000 results per query |
-| Connection pool | 25 open / 10 idle connections |
-| Sustained throughput (30 clients) | ~321 ops/sec |
-| Burst recovery (15s idle -> 100 clients) | ~285 ops/sec |
-| Batch amortization | Per-doc cost drops from 5.6ms (single) to 1.0ms (batch=500) |
+| Connection pool | 50 open / 25 idle connections |
+| Sustained throughput (30 clients) | ~360 ops/sec |
+| Burst recovery (15s idle -> 100 clients) | ~454 ops/sec |
+| Batch amortization | Per-doc cost drops from 5ms (single) to ~0.8ms (batch=1000) |
 | Vector dimension support | Tested up to 3072 (OpenAI large embeddings) |
 | `include_vector=false` payload reduction | ~55x smaller responses |
 
 <AccordionGroup>
   <Accordion title="Connection Pool Behavior">
-    The pool handles up to 100 concurrent clients (4x the `MaxOpenConns` limit) without errors. Go's `database/sql` package queues excess connections, adding latency but preventing failures.
+    The pool handles up to 100 concurrent clients (2x the `MaxOpenConns` limit of 50) without errors. Go's `database/sql` package queues excess connections, adding latency but preventing failures. Keeping 25 idle connections warm eliminates cold-start penalties on burst traffic.
   </Accordion>
   <Accordion title="Write Throughput Stability">
-    Sequential insert throughput remains stable at ~154 ops/sec across 5,000 documents. No degradation observed at 15,000+ documents per collection.
+    Sequential insert throughput remains stable at ~200 ops/sec across 5,000 documents. No degradation observed at 15,000+ documents per collection.
   </Accordion>
   <Accordion title="Metadata Filter Overhead">
     GIN-indexed metadata filtering adds zero measurable overhead to vector search queries (~6ms with or without filter).
@@ -151,6 +160,7 @@ CREATE TABLE collections (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) UNIQUE NOT NULL,
     vector_dim INTEGER NOT NULL,
+    distance_metric VARCHAR(20) DEFAULT 'cosine',
     metadata_schema JSONB DEFAULT '{}',
     document_count BIGINT DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),

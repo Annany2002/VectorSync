@@ -59,12 +59,15 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 
 | Operation | Throughput | Avg Latency |
 |-----------|-----------|-------------|
-| Single Insert | ~200 ops/sec | ~5ms |
-| Batch Insert (100 docs) | ~833 docs/sec | ~120ms/batch |
-| Vector Search (k=10) | ~91 ops/sec | ~11ms |
+| Single Insert | ~210 ops/sec | ~5ms |
+| Batch Insert (1000 docs) | ~1,100 docs/sec | ~810ms/batch |
+| Upsert (new) | ~207 ops/sec | ~5ms |
+| Vector Search (k=10) | ~250 ops/sec | ~4ms |
 | Full-Text Search | ~182 ops/sec | ~6ms |
 | Hybrid Search | ~146 ops/sec | ~7ms |
-| Concurrent Inserts (30 clients) | ~321 ops/sec | ~54ms |
+| Concurrent Inserts (50 clients) | ~712 ops/sec | ~17ms |
+| Collection Create | ~48 ops/sec | ~21ms |
+| Burst After Idle (100 clients) | ~454 ops/sec | ~33ms |
 
 ## Architecture Overview
 

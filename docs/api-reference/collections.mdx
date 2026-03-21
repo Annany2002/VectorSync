@@ -22,7 +22,8 @@ Create a new vector collection with a fixed dimension.
     ```bash
     grpcurl -plaintext -d '{
       "name": "my_embeddings",
-      "vector_dimension": 768
+      "vector_dimension": 768,
+      "distance_metric": "cosine"
     }' localhost:6309 collection.CollectionService/CreateCollection
     ```
   </Tab>
@@ -34,6 +35,7 @@ Create a new vector collection with a fixed dimension.
 |-------|------|----------|-------------|
 | `name` | string | Yes | Unique collection name |
 | `vector_dimension` | integer | Yes | Fixed dimension for all vectors |
+| `distance_metric` | string | No | Distance metric: `cosine` (default), `euclidean`, or `inner_product` |
 | `metadata_schema` | object | No | Optional metadata schema definition |
 
 ### Response

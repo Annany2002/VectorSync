@@ -26,10 +26,10 @@ Core vector search API with storage, retrieval, and three search modes.
     Weighted vector + full-text search in a single query
   </Card>
   <Card title="Batch Operations" icon="check">
-    Insert and delete up to 100 documents atomically
+    Insert and delete up to 1000 documents atomically
   </Card>
   <Card title="Performance Tuning" icon="check">
-    Statement-level triggers, connection pool tuning, explicit batch transactions, optional vector exclusion in responses (~97% payload reduction)
+    Connection pool (50/25), async HNSW index creation, single-lock collection cache, sync.Pool for vector serialization, synchronous_commit=off for batches, statement-level triggers, optional vector exclusion (~55x payload reduction)
   </Card>
   <Card title="Dual API" icon="check">
     gRPC (6309) and HTTP/JSON (8080) via grpc-gateway

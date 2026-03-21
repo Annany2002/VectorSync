@@ -5,7 +5,7 @@ description: 'Vector similarity, full-text, and hybrid search endpoints'
 
 ## Search Documents
 
-Find documents with similar vectors using cosine similarity.
+Find documents with similar vectors using the collection's configured distance metric (cosine, euclidean, or inner product).
 
 <Tabs>
   <Tab title="HTTP">
@@ -67,7 +67,7 @@ Find documents with similar vectors using cosine similarity.
 ```
 
 <Info>
-The `score` field represents cosine similarity (1.0 = identical, 0.0 = orthogonal).
+The `score` field represents similarity based on the collection's distance metric. For cosine: 1.0 = identical, 0.0 = orthogonal. For euclidean: 1.0 = identical, decreasing with distance. For inner product: higher = more similar.
 </Info>
 
 ---
