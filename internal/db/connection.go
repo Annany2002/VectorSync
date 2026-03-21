@@ -23,9 +23,11 @@ func Connect() (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Set connection pool parameters
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(10)
+	// Set connection pool parameters.
+	// 50 open / 25 idle gives headroom for high-concurrency workloads while staying
+	// well under PostgreSQL's default max_connections=100.
+	db.SetMaxOpenConns(50)
+	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(10 * time.Minute)
 	db.SetConnMaxIdleTime(5 * time.Minute)
 

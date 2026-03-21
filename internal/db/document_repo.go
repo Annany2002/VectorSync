@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Annany2002/vector-sync/internal/models"
 	"github.com/lib/pq"
@@ -151,11 +152,18 @@ func (r *DocumentRepo) Upsert(ctx context.Context, documentId, collectionId, con
 	}, nil
 }
 
+// vectorBuilderPool reuses strings.Builder instances to reduce per-call allocations
+// on the hot path (every insert, upsert, batch, and search calls vectorToString).
+var vectorBuilderPool = sync.Pool{
+	New: func() any { return &strings.Builder{} },
+}
+
 // vectorToString converts []float32 to PostgreSQL vector format: '[1.0,2.0,3.0]'
 func vectorToString(vec []float32) string {
-	var b strings.Builder
+	b := vectorBuilderPool.Get().(*strings.Builder)
+	b.Reset()
 	// Pre-allocate: '[' + ~12 chars per float + ',' separators + ']'
-	b.Grow(1 + len(vec)*12 + 1)
+	b.Grow(2 + len(vec)*12)
 	b.WriteByte('[')
 	for i, v := range vec {
 		if i > 0 {
@@ -164,7 +172,9 @@ func vectorToString(vec []float32) string {
 		b.WriteString(strconv.FormatFloat(float64(v), 'f', -1, 32))
 	}
 	b.WriteByte(']')
-	return b.String()
+	s := b.String()
+	vectorBuilderPool.Put(b)
+	return s
 }
 
 // stringToVector parses PostgreSQL vector string '[1.0,2.0,3.0]' to []float32
@@ -575,7 +585,7 @@ func (r *DocumentRepo) FullTextSearch(ctx context.Context, collectionId, query s
 }
 
 // BatchInsert inserts a group of documents inside a collection
-// Uses an explicit transaction to reduce WAL overhead and ensure atomicity
+// Uses an explicit transaction to reduce WAL overhead and ensure atomicity.
 func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, documents []models.Document) (int, []models.Document, error) {
 	// Start explicit transaction for atomic batch insert
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -584,16 +594,28 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 	}
 	defer tx.Rollback() // no-op if tx.Commit() succeeds
 
-	// Build multi-value INSERT using string builder
-	var (
-		query    strings.Builder
-		contents []any
-	)
+	// Skip WAL fsync wait for this transaction. The data is written to the WAL
+	// buffer and flushed asynchronously by the background writer, avoiding the
+	// per-commit disk stall that dominates batch insert latency.
+	if _, err = tx.ExecContext(ctx, "SET LOCAL synchronous_commit = OFF"); err != nil {
+		return 0, nil, fmt.Errorf("failed to set synchronous_commit: %w", err)
+	}
 
+	n := len(documents)
+
+	// Pre-allocate query builder and args slice to avoid incremental re-allocations.
+	var query strings.Builder
+	query.Grow(60 + n*26) // base header + ~26 chars per placeholder group
 	query.WriteString("INSERT INTO documents (collection_id, vector, metadata, content) VALUES")
 
+	// Pre-allocate: 4 args per document
+	contents := make([]any, 0, n*4)
+
+	// numBuf is a stack-allocated scratch buffer for integer formatting,
+	// avoiding the heap allocations of fmt.Sprintf inside the hot loop.
+	var numBuf [20]byte
+
 	for i, v := range documents {
-		idx := i * 4
 		// Convert the vector of the document to string
 		vectorStr := vectorToString(v.Vector)
 
@@ -603,15 +625,21 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 			return 0, nil, fmt.Errorf("failed to marshal metadata: %w", err)
 		}
 
-		// create a single insert line by line
-		query.WriteString(fmt.Sprintf("($%d, $%d::vector, $%d, $%d)", idx+1, idx+2, idx+3, idx+4))
-
-		// append "," after every line insert
-		if i < len(documents)-1 {
-			query.WriteString(",")
+		// Write placeholder group directly without fmt.Sprintf
+		base := i*4 + 1
+		query.WriteString("($")
+		query.Write(strconv.AppendInt(numBuf[:0], int64(base), 10))
+		query.WriteString(",$")
+		query.Write(strconv.AppendInt(numBuf[:0], int64(base+1), 10))
+		query.WriteString("::vector,$")
+		query.Write(strconv.AppendInt(numBuf[:0], int64(base+2), 10))
+		query.WriteString(",$")
+		query.Write(strconv.AppendInt(numBuf[:0], int64(base+3), 10))
+		query.WriteByte(')')
+		if i < n-1 {
+			query.WriteByte(',')
 		}
 
-		// we append each document in the values content to later pass in execCtx function
 		contents = append(contents, v.CollectionId, vectorStr, metadataJSON, v.Content)
 	}
 
