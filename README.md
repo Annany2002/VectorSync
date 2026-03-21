@@ -32,25 +32,26 @@ Benchmarked with 768-dimension vectors on PostgreSQL 17 + pgvector (Docker, loca
 
 | Operation | Throughput | Avg Latency |
 |-----------|-----------|-------------|
-| Single Insert | ~200 ops/sec | ~5ms |
-| Batch Insert (100 docs) | ~833 docs/sec | ~120ms/batch |
-| Batch Insert (500 docs) | ~970 docs/sec | ~516ms/batch |
-| Upsert (new) | ~148 ops/sec | ~7ms |
-| Upsert (update) | ~144 ops/sec | ~7ms |
-| Vector Search (k=10) | ~91 ops/sec | ~11ms |
+| Single Insert | ~210 ops/sec | ~5ms |
+| Batch Insert (1000 docs) | ~1,100 docs/sec | ~810ms/batch |
+| Upsert (new) | ~207 ops/sec | ~5ms |
+| Upsert (update) | ~217 ops/sec | ~5ms |
+| Vector Search (k=10) | ~250 ops/sec | ~4ms |
 | Full-Text Search | ~182 ops/sec | ~6ms |
 | Hybrid Search | ~146 ops/sec | ~7ms |
-| Metadata Filtered Search | ~167 ops/sec | ~6ms |
-| Concurrent Inserts (30 clients) | ~321 ops/sec | ~54ms |
+| Concurrent Inserts (50 clients) | ~712 ops/sec | ~17ms |
+| Collection Create | ~48 ops/sec | ~21ms |
+| Burst After Idle (100 clients) | ~454 ops/sec | ~33ms |
 
 **Stress-tested up to:**
 - 100 concurrent clients with zero errors
 - 15,000+ documents with no throughput degradation
-- 1000-doc max batch size (10,000 docs in 10 batches at ~880 docs/sec)
+- 1000-doc max batch size (10,000 docs in 10 batches at ~1,100 docs/sec)
 - Vector dimensions up to 3072 (OpenAI `text-embedding-3-large`)
+- Content up to 1MB per document
 - `include_vector=false` reduces response payload by 55x
 
-Key optimizations: per-collection HNSW indexes, statement-level triggers for document counting, in-memory collection dimension cache, connection pooling (25 open / 10 idle), and explicit transactions for batch operations.
+Key optimizations: connection pool (50 open / 25 idle), async HNSW index creation, single-lock collection cache, `sync.Pool` for vector serialization, `synchronous_commit=off` for batch inserts, and per-collection partial HNSW indexes with statement-level triggers for O(1) document counting.
 
 ## Quick Start
 
