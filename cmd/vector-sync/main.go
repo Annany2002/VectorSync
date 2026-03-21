@@ -49,8 +49,14 @@ func main() {
 	documentHandler := grpcHandler.NewDocumentHandler(documentService, collectionService)
 	healthHandler := grpcHandler.NewHealthHandler(healthService)
 
+	// 32MB cap covers 3072-dim vectors + large content strings.
+	const maxMsgSize = 32 * 1024 * 1024
+
 	// Create gRPC server
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize),
+	)
 
 	// Register our services with the gRPC server
 	pb.RegisterCollectionServiceServer(grpcServer, collectionHandler)
@@ -78,12 +84,22 @@ func main() {
 	// Create HTTP gateway mux
 	mux := runtime.NewServeMux()
 
+	// Shared dial options for all gateway→gRPC connections.
+	// MaxCallRecvMsgSize / MaxCallSendMsgSize must match the server limits set above.
+	gatewayDialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxMsgSize),
+			grpc.MaxCallSendMsgSize(maxMsgSize),
+		),
+	}
+
 	// Register CollectionService gateway handler
 	err = pb.RegisterCollectionServiceHandlerFromEndpoint(
 		context.Background(),
 		mux,
 		"localhost:6309",
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+		gatewayDialOpts,
 	)
 	if err != nil {
 		log.Fatalf("Failed to register collection gateway: %v", err)
@@ -94,7 +110,7 @@ func main() {
 		context.Background(),
 		mux,
 		"localhost:6309",
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+		gatewayDialOpts,
 	)
 	if err != nil {
 		log.Fatalf("Failed to register document gateway: %v", err)
@@ -105,7 +121,7 @@ func main() {
 		context.Background(),
 		mux,
 		"localhost:6309",
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+		gatewayDialOpts,
 	)
 	if err != nil {
 		log.Fatalf("Failed to register health gateway: %v", err)

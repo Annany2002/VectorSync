@@ -85,9 +85,13 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 		WHERE collection_id = '%s'
 	`, collection.Id, opsClass, collection.Id)
 
-	// Index creation is best-effort; don't fail collection creation if it errors
-	// (e.g., no documents exist yet, which is fine -- index will be built on first insert)
-	_, _ = r.db.ExecContext(ctx, indexQuery)
+	// Index creation runs in a background goroutine so collection creates return
+	// immediately without blocking on the DDL statement.
+	// context.Background() is intentional: the caller's context may be cancelled
+	// before the goroutine executes, but we still want the index to be created.
+	go func() {
+		_, _ = r.db.ExecContext(context.Background(), indexQuery)
+	}()
 
 	return &collection, nil
 }
