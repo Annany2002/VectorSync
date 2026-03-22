@@ -81,11 +81,12 @@ Handles protocol-specific request/response translation:
 
 ### Service Layer
 
-Contains business logic:
-- Input validation
-- Vector dimension checking
-- Error handling
-- Orchestrating repository calls
+Contains business logic, depends on repository interfaces for testability:
+- Input validation (dimensions, NaN/Inf, batch limits, thresholds)
+- Vector dimension checking against collection config
+- Weight normalization for hybrid search
+- Error handling and collection cache coordination
+- 28 unit tests with mock repositories (no DB required)
 
 ### Repository Layer
 
