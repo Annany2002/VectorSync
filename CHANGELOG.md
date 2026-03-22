@@ -15,6 +15,13 @@ All notable changes to VectorSync are documented in this file.
 
 ### Fixed
 - **DB_URL built from env components** — no longer requires a hardcoded connection string; builds URL from `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` with fallback to `DB_URL` if set
+- **FullTextSearch `include_vector` exposed** — the handler hardcoded `include_vector=false`; now reads it from the request like vector and hybrid search
+
+### Testing
+- **28 service-layer unit tests** — DocumentService (16 tests) and CollectionService (12 tests) with mock repositories; covers validation, error paths, defaults, dimension checks, NaN/Inf handling, batch limits, weight normalization
+
+### Refactored
+- **Repository interfaces** — extracted `DocumentRepository` and `CollectionRepository` interfaces; services now depend on interfaces, enabling unit testing with mocks
 
 ### Docs
 - Configuration docs rewritten with tabbed examples for Docker, local dev, and managed DB setups
