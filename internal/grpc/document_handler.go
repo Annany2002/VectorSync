@@ -220,13 +220,14 @@ func (h *DocumentHandler) FullTextSearch(ctx context.Context, req *pb.FullTextSe
 	}
 
 	// Delegate to service layer (handles collection validation and caching)
+	includeVector := req.GetIncludeVector()
 	searchResults, err := h.documentService.FullTextSearchDocuments(
 		ctx,
 		collectionId,
 		query,
 		limit,
 		minRank,
-		false, // full-text search does not return vectors by default
+		includeVector,
 	)
 	if err != nil {
 		return nil, err

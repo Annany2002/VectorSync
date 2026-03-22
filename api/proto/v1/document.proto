@@ -162,6 +162,9 @@ message FullTextSearchRequest {
 
     // Minimum relevance rank threshold (0.0 to 1.0, 0 means no threshold)
     float min_rank = 4;
+
+    // include vector in response or not (omit for smaller response size)
+    bool include_vector = 5;
 }
 
 // FullTextSearchResponse represent a response for `full text search` for a document
