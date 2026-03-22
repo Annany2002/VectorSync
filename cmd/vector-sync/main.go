@@ -51,8 +51,8 @@ func main() {
 	}()
 
 	// Create service layer (business logic)
-	collectionService := services.NewCollectionService(*collectionRepo)
-	documentService := services.NewDocumentService(*documentRepo, *collectionRepo, collectionCache)
+	collectionService := services.NewCollectionService(collectionRepo)
+	documentService := services.NewDocumentService(documentRepo, collectionRepo, collectionCache)
 	healthService := services.NewHealthService(dbConn)
 
 	// Create handler layer (handles gRPC requests)

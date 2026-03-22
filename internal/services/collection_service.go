@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Annany2002/vector-sync/internal/db"
 	"github.com/Annany2002/vector-sync/internal/models"
 )
 
 // CollectionService is the service for collection operations
 type CollectionService struct {
-	repo db.CollectionRepo
+	repo CollectionRepository
 }
 
 // NewCollectionService creates a new collection service
-func NewCollectionService(repo db.CollectionRepo) *CollectionService {
+func NewCollectionService(repo CollectionRepository) *CollectionService {
 	return &CollectionService{repo: repo}
 }
 

@@ -13,13 +13,13 @@ import (
 
 // DocumentService is the service for document operations
 type DocumentService struct {
-	documentRepo    db.DocumentRepo
-	collectionRepo  db.CollectionRepo
+	documentRepo    DocumentRepository
+	collectionRepo  CollectionRepository
 	collectionCache *db.CollectionCache
 }
 
 // NewDocumentService creates a new document service
-func NewDocumentService(documentRepo db.DocumentRepo, collectionRepo db.CollectionRepo, collectionCache *db.CollectionCache) *DocumentService {
+func NewDocumentService(documentRepo DocumentRepository, collectionRepo CollectionRepository, collectionCache *db.CollectionCache) *DocumentService {
 	return &DocumentService{
 		documentRepo:    documentRepo,
 		collectionRepo:  collectionRepo,
