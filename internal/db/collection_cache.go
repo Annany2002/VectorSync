@@ -1,6 +1,10 @@
 package db
 
-import "sync"
+import (
+	"context"
+	"database/sql"
+	"sync"
+)
 
 // collectionInfo holds cached collection metadata
 type collectionInfo struct {
@@ -86,4 +90,29 @@ func (c *CollectionCache) Delete(collectionId string) {
 	defer c.mu.Unlock()
 
 	delete(c.cache, collectionId)
+}
+
+// WarmFromDB loads all collections' dimension and distance_metric into the
+// cache in a single query. Call this once at startup (in a background goroutine)
+// to eliminate the first-request cache-miss DB round-trip for every collection.
+func (c *CollectionCache) WarmFromDB(ctx context.Context, db *sql.DB) error {
+	rows, err := db.QueryContext(ctx, "SELECT id, vector_dim, distance_metric FROM collections")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for rows.Next() {
+		var id string
+		var dim int32
+		var metric string
+		if err := rows.Scan(&id, &dim, &metric); err != nil {
+			return err
+		}
+		c.cache[id] = collectionInfo{dimension: dim, distanceMetric: metric}
+	}
+	return rows.Err()
 }

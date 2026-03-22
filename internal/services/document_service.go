@@ -402,13 +402,10 @@ func (s *DocumentService) BatchDelete(ctx context.Context, collectionId string, 
 		return 0, nil, fmt.Errorf("batch size exceeds limit, got:%d, allowed:%d", len(documentIds), batchSize)
 	}
 
-	// Check if collection exists
-	_, err := s.collectionRepo.ListById(ctx, collectionId)
-	if err == sql.ErrNoRows {
-		return 0, nil, fmt.Errorf("collection_id %s not found", collectionId)
-	}
+	// Check if collection exists (uses cache to avoid unnecessary DB round-trip)
+	_, _, err := s.getCollectionInfo(ctx, collectionId)
 	if err != nil {
-		return 0, nil, fmt.Errorf("failed to fetch collection: %w", err)
+		return 0, nil, err
 	}
 
 	// Batch delete the documents

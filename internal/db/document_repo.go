@@ -603,6 +603,43 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 
 	n := len(documents)
 
+	// Pre-serialize vectors and metadata in parallel across goroutines.
+	// Each document's serialization is independent, so we fan out the CPU work
+	// (vectorToString + json.Marshal) then assemble the query string sequentially.
+	type serialized struct {
+		vectorStr    string
+		metadataJSON []byte
+		err          error
+	}
+	prepped := make([]serialized, n)
+
+	// Use a WaitGroup to fan out serialization. For small batches (<32 docs)
+	// the overhead of goroutines isn't worth it, so we serialize inline.
+	if n >= 32 {
+		var wg sync.WaitGroup
+		wg.Add(n)
+		for i := range documents {
+			go func(idx int) {
+				defer wg.Done()
+				prepped[idx].vectorStr = vectorToString(documents[idx].Vector)
+				prepped[idx].metadataJSON, prepped[idx].err = json.Marshal(documents[idx].Metadata)
+			}(i)
+		}
+		wg.Wait()
+	} else {
+		for i := range documents {
+			prepped[i].vectorStr = vectorToString(documents[i].Vector)
+			prepped[i].metadataJSON, prepped[i].err = json.Marshal(documents[i].Metadata)
+		}
+	}
+
+	// Check for marshalling errors
+	for i := range prepped {
+		if prepped[i].err != nil {
+			return 0, nil, fmt.Errorf("failed to marshal metadata for doc %d: %w", i, prepped[i].err)
+		}
+	}
+
 	// Pre-allocate query builder and args slice to avoid incremental re-allocations.
 	var query strings.Builder
 	query.Grow(60 + n*26) // base header + ~26 chars per placeholder group
@@ -616,15 +653,6 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 	var numBuf [20]byte
 
 	for i, v := range documents {
-		// Convert the vector of the document to string
-		vectorStr := vectorToString(v.Vector)
-
-		// Convert the metadata to []byte
-		metadataJSON, err := json.Marshal(v.Metadata)
-		if err != nil {
-			return 0, nil, fmt.Errorf("failed to marshal metadata: %w", err)
-		}
-
 		// Write placeholder group directly without fmt.Sprintf
 		base := i*4 + 1
 		query.WriteString("($")
@@ -640,7 +668,7 @@ func (r *DocumentRepo) BatchInsert(ctx context.Context, collectionId string, doc
 			query.WriteByte(',')
 		}
 
-		contents = append(contents, v.CollectionId, vectorStr, metadataJSON, v.Content)
+		contents = append(contents, v.CollectionId, prepped[i].vectorStr, prepped[i].metadataJSON, v.Content)
 	}
 
 	// add returning statement to return the document

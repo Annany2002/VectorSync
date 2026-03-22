@@ -159,10 +159,6 @@ func (r *CollectionRepo) ListById(ctx context.Context, collectionId string) (*mo
 
 // DeleteById deletes a collection with an id and drops its HNSW index
 func (r *CollectionRepo) DeleteById(ctx context.Context, collectionId string) (int64, error) {
-	// Drop the per-collection HNSW index (best-effort, ignore errors)
-	dropIndexQuery := fmt.Sprintf(`DROP INDEX IF EXISTS idx_hnsw_%s`, collectionId)
-	_, _ = r.db.ExecContext(ctx, dropIndexQuery)
-
 	deleteQuery := `
 		DELETE FROM collections WHERE id = $1
 		RETURNING document_count
@@ -173,6 +169,15 @@ func (r *CollectionRepo) DeleteById(ctx context.Context, collectionId string) (i
 	if err != nil {
 		return 0, err
 	}
+
+	// Drop the per-collection HNSW index in the background. The DELETE above
+	// cascade-deletes all documents, so the index is already orphaned.
+	// context.Background() ensures the DROP completes even if the caller's
+	// context is cancelled.
+	go func() {
+		dropIndexQuery := fmt.Sprintf(`DROP INDEX IF EXISTS idx_hnsw_%s`, collectionId)
+		_, _ = r.db.ExecContext(context.Background(), dropIndexQuery)
+	}()
 
 	return documentCount, nil
 }
