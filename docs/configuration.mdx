@@ -7,11 +7,29 @@ description: 'Environment variables and server configuration'
 
 VectorSync is configured via environment variables. Create a `.env` file in the project root.
 
-### Required Variables
+### Database Variables
+
+VectorSync supports two ways to configure the database connection:
+
+**Option 1: Individual components (recommended for Docker Compose)**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | `localhost` | PostgreSQL hostname |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USER` | - | Database username |
+| `DB_PASSWORD` | - | Database password |
+| `DB_NAME` | - | Database name |
+
+**Option 2: Full connection string (for managed databases, Heroku, etc.)**
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DB_URL` | PostgreSQL connection string | `postgres://user:pass@localhost:5432/vectorsync?sslmode=disable` |
+| `DB_URL` | PostgreSQL connection string | `postgres://user:pass@host:5432/dbname?sslmode=disable` |
+
+<Info>
+If `DB_URL` is set, it takes priority and the individual variables are ignored. If `DB_URL` is not set, the connection string is built automatically from `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
+</Info>
 
 ### Optional Variables
 
@@ -25,21 +43,44 @@ VectorSync is configured via environment variables. Create a `.env` file in the 
 
 ## Example Configuration
 
-```bash .env
-# Database
-DB_URL=postgres://vectorsync:password@localhost:5432/vectorsync?sslmode=disable
+<Tabs>
+  <Tab title="Docker Compose">
+    ```bash .env
+    # Database (uses Docker service name 'db' as host)
+    DB_HOST=db
+    DB_PORT=5432
+    DB_USER=admin
+    DB_PASSWORD=your_password
+    DB_NAME=vectorsync
 
-# Server ports
-GRPC_PORT=6309
-HTTP_PORT=8080
+    # Server ports
+    GRPC_PORT=6309
+    HTTP_PORT=8080
 
-# Logging
-LOG_LEVEL=info
+    # Database pool
+    MAX_DB_CONNECTIONS=50
+    IDLE_DB_CONNECTIONS=25
+    ```
+  </Tab>
+  <Tab title="Local Development">
+    ```bash .env
+    # Database (defaults to localhost:5432)
+    DB_USER=admin
+    DB_PASSWORD=your_password
+    DB_NAME=vectorsync
 
-# Database pool
-MAX_DB_CONNECTIONS=50
-IDLE_DB_CONNECTIONS=25
-```
+    # Server ports
+    GRPC_PORT=6309
+    HTTP_PORT=8080
+    ```
+  </Tab>
+  <Tab title="Managed Database">
+    ```bash .env
+    # Full connection string (overrides individual vars)
+    DB_URL=postgres://user:pass@managed-db.example.com:5432/vectorsync?sslmode=require
+    ```
+  </Tab>
+</Tabs>
 
 ## Database Setup
 
