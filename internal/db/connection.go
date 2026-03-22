@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"time"
 
@@ -18,7 +19,28 @@ func Connect() (*sql.DB, error) {
 	// Load .env if present (optional in containers where env vars are injected directly)
 	_ = godotenv.Load()
 
-	db, err := sql.Open("postgres", os.Getenv("DB_URL"))
+	// Use DB_URL if explicitly set; otherwise build it from individual components.
+	// This avoids hardcoding a connection string in .env while still supporting
+	// a single DB_URL override for environments that prefer it (e.g., managed DBs).
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		host := os.Getenv("DB_HOST")
+		port := os.Getenv("DB_PORT")
+		user := os.Getenv("DB_USER")
+		password := os.Getenv("DB_PASSWORD")
+		name := os.Getenv("DB_NAME")
+
+		if host == "" {
+			host = "localhost"
+		}
+		if port == "" {
+			port = "5432"
+		}
+
+		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, name)
+	}
+
+	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		return nil, err
 	}
