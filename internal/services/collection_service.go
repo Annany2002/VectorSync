@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Annany2002/vector-sync/internal/db"
 	"github.com/Annany2002/vector-sync/internal/models"
@@ -44,22 +44,16 @@ func (s *CollectionService) CreateCollection(ctx context.Context, name string, v
 		return nil, fmt.Errorf("invalid distance_metric %q: must be cosine, euclidean, or inner_product", distanceMetric)
 	}
 
-	// check if the collection already exists
-	existing, err := s.repo.GetCollectionByName(ctx, name)
-
-	// If we found a collection (no error), it's a duplicate
-	if err == nil && existing != nil {
-		return nil, errors.New("collection already exists")
-	}
-
-	// If there's a database error (not just "not found"), return it
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
-	}
-
-	// Collection doesn't exist - safe to create
+	// Insert directly and let the UNIQUE constraint on collections.name
+	// catch duplicates. This eliminates a DB round-trip (SELECT before INSERT)
+	// and the TOCTOU race where two concurrent creates could both pass the
+	// check and then one fails on insert anyway.
 	collection, err := s.repo.Create(ctx, name, vectorDimension, metadataSchema, distanceMetric)
 	if err != nil {
+		// PostgreSQL unique violation: code 23505
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
+			return nil, errors.New("collection already exists")
+		}
 		return nil, err
 	}
 	return collection, nil

@@ -39,6 +39,17 @@ func main() {
 	documentRepo := db.NewDocumentRepo(dbConn)
 	collectionCache := db.NewCollectionCache()
 
+	// Warm the collection cache in the background so the first request to each
+	// collection doesn't pay a DB round-trip. Non-blocking: if it fails, the
+	// cache miss path handles it transparently.
+	go func() {
+		if err := collectionCache.WarmFromDB(context.Background(), dbConn); err != nil {
+			log.Warnf("Cache warm failed (will be populated on first access): %v", err)
+		} else {
+			log.Infof("Collection cache warmed successfully")
+		}
+	}()
+
 	// Create service layer (business logic)
 	collectionService := services.NewCollectionService(*collectionRepo)
 	documentService := services.NewDocumentService(*documentRepo, *collectionRepo, collectionCache)
