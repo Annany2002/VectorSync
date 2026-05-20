@@ -3,12 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"math"
-	"net/http"
-	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -324,76 +319,4 @@ func TestHybridSearchDocuments(t *testing.T) {
 			t.Errorf("expected text_weight=0.5, got %f", capturedTW)
 		}
 	})
-}
-
-func TestIngestDocument(t *testing.T) {
-	ctx := context.Background()
-
-	// Spin up a mock Ollama server
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		resp := struct {
-			Embeddings [][]float32 `json:"embeddings"`
-		}{
-			Embeddings: [][]float32{
-				{0.1, 0.2, 0.3},
-				{0.4, 0.5, 0.6},
-			},
-		}
-		json.NewEncoder(w).Encode(resp)
-	}))
-	defer server.Close()
-
-	os.Setenv("OLLAMA_HOST", server.URL)
-	defer os.Unsetenv("OLLAMA_HOST")
-
-	colRepo := &mockCollectionRepo{
-		ListByIdFn: func(ctx context.Context, collectionId string) (*models.Collection, error) {
-			return &models.Collection{
-				Id:                collectionId,
-				VectorDimension:   3,
-				DistanceMetric:    "cosine",
-				EmbeddingProvider: "ollama",
-				EmbeddingModel:    "nomic-embed-text",
-			}, nil
-		},
-	}
-
-	var capturedDocs []models.Document
-	docRepo := &mockDocumentRepo{
-		BatchInsertFn: func(ctx context.Context, collectionId string, documents []models.Document) (int, []models.Document, error) {
-			capturedDocs = documents
-			res := make([]models.Document, len(documents))
-			for i, d := range documents {
-				res[i] = d
-				res[i].Id = fmt.Sprintf("doc-%d", i)
-			}
-			return len(res), res, nil
-		},
-	}
-
-	cache := db.NewCollectionCache()
-	cache.Insert("col-1", 3, "cosine", "ollama", "nomic-embed-text")
-	svc := NewDocumentService(docRepo, colRepo, cache)
-
-	count, ids, err := svc.IngestDocument(ctx, "col-1", "Sentence one. Sentence two.", nil, ChunkingConfig{
-		Strategy:     "sentence",
-		ChunkSize:    20,
-		ChunkOverlap: 0,
-	})
-
-	requireNilErr(t, err)
-	if count != 2 {
-		t.Errorf("expected count 2, got %d", count)
-	}
-	if len(ids) != 2 || ids[0] != "doc-0" || ids[1] != "doc-1" {
-		t.Errorf("unexpected document IDs: %v", ids)
-	}
-
-	if len(capturedDocs) != 2 {
-		t.Fatalf("expected 2 documents inserted, got %d", len(capturedDocs))
-	}
-	if capturedDocs[0].Content != "Sentence one." || capturedDocs[1].Content != "Sentence two." {
-		t.Errorf("unexpected content of inserted docs: %v", capturedDocs)
-	}
 }

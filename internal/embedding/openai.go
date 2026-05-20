@@ -76,7 +76,12 @@ func (c *OpenAIEmbeddingClient) GenerateEmbeddings(ctx context.Context, texts []
 		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/embeddings", bytes.NewReader(jsonBytes))
+	apiBase := os.Getenv("OPENAI_API_BASE")
+	if apiBase == "" {
+		apiBase = "https://api.openai.com"
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiBase+"/v1/embeddings", bytes.NewReader(jsonBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create http request: %w", err)
 	}
