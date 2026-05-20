@@ -25,7 +25,7 @@ type DocumentRepository interface {
 // CollectionRepository defines the interface for collection persistence operations.
 // Concrete implementation: db.CollectionRepo
 type CollectionRepository interface {
-	Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error)
+	Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, embeddingProvider, embeddingModel string) (*models.Collection, error)
 	List(ctx context.Context, limit, offset int) ([]models.Collection, error)
 	ListById(ctx context.Context, collectionId string) (*models.Collection, error)
 	DeleteById(ctx context.Context, collectionId string) (int64, error)

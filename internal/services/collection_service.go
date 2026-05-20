@@ -20,7 +20,7 @@ func NewCollectionService(repo CollectionRepository) *CollectionService {
 }
 
 // CreateCollection creates a new collection
-func (s *CollectionService) CreateCollection(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
+func (s *CollectionService) CreateCollection(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, embeddingProvider, embeddingModel string) (*models.Collection, error) {
 	// validate the input
 	if name == "" {
 		return nil, errors.New("name is required")
@@ -43,11 +43,26 @@ func (s *CollectionService) CreateCollection(ctx context.Context, name string, v
 		return nil, fmt.Errorf("invalid distance_metric %q: must be cosine, euclidean, or inner_product", distanceMetric)
 	}
 
+	// Validate embedding provider/model consistency
+	if embeddingProvider != "" {
+		switch embeddingProvider {
+		case "openai", "ollama", "cohere":
+			// valid
+		default:
+			return nil, fmt.Errorf("unsupported embedding provider %q", embeddingProvider)
+		}
+		if embeddingModel == "" {
+			return nil, errors.New("embedding_model is required when embedding_provider is set")
+		}
+	} else if embeddingModel != "" {
+		return nil, errors.New("embedding_provider is required when embedding_model is set")
+	}
+
 	// Insert directly and let the UNIQUE constraint on collections.name
 	// catch duplicates. This eliminates a DB round-trip (SELECT before INSERT)
 	// and the TOCTOU race where two concurrent creates could both pass the
 	// check and then one fails on insert anyway.
-	collection, err := s.repo.Create(ctx, name, vectorDimension, metadataSchema, distanceMetric)
+	collection, err := s.repo.Create(ctx, name, vectorDimension, metadataSchema, distanceMetric, embeddingProvider, embeddingModel)
 	if err != nil {
 		// PostgreSQL unique violation: code 23505
 		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
