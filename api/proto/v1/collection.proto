@@ -28,6 +28,10 @@ message Collection {
     int64 document_count = 7;
     // distance metric for vector search (cosine, euclidean, inner_product)
     string distance_metric = 8;
+    // embedding provider (e.g. openai, ollama, cohere)
+    string embedding_provider = 9;
+    // embedding model
+    string embedding_model = 10;
 }
 
 
@@ -41,6 +45,10 @@ message CreateCollectionRequest {
     map<string, google.protobuf.Struct> metadata_schema = 3;
     // distance metric for vector search (cosine, euclidean, inner_product; default: cosine)
     string distance_metric = 4;
+    // embedding provider (e.g. openai, ollama, cohere)
+    string embedding_provider = 5;
+    // embedding model
+    string embedding_model = 6;
 }
 
 // CreateCollectionResponse represents a response to create a collection

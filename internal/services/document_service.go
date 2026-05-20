@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/Annany2002/vector-sync/internal/chunker"
 	"github.com/Annany2002/vector-sync/internal/db"
+	"github.com/Annany2002/vector-sync/internal/embedding"
 	"github.com/Annany2002/vector-sync/internal/models"
 )
 
@@ -27,12 +29,19 @@ func NewDocumentService(documentRepo DocumentRepository, collectionRepo Collecti
 	}
 }
 
+// ChunkingConfig defines parameters for document ingestion and text splitting
+type ChunkingConfig struct {
+	Strategy     string
+	ChunkSize    int
+	ChunkOverlap int
+}
+
 // getCollectionInfo returns the vector dimension and distance metric for a collection
 // under a single cache read-lock. On a cache miss it queries the DB once and
 // populates both fields. This replaces the previous two-helper pattern that
 // acquired the read-lock twice per request on the hot search path.
 func (s *DocumentService) getCollectionInfo(ctx context.Context, collectionId string) (int, string, error) {
-	if dim, metric, ok := s.collectionCache.GetInfo(collectionId); ok {
+	if dim, metric, _, _, ok := s.collectionCache.GetInfo(collectionId); ok {
 		return int(dim), metric, nil
 	}
 
@@ -45,7 +54,7 @@ func (s *DocumentService) getCollectionInfo(ctx context.Context, collectionId st
 		return 0, "", fmt.Errorf("failed to fetch collection: %w", err)
 	}
 
-	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric)
+	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric, collection.EmbeddingProvider, collection.EmbeddingModel)
 	return collection.VectorDimension, collection.DistanceMetric, nil
 }
 
@@ -498,4 +507,95 @@ func (s *DocumentService) HybridSearchDocuments(ctx context.Context, collectionI
 	}
 
 	return results, nil
+}
+
+// IngestDocument ingests a raw document by chunking it, generating embeddings, and storing them
+func (s *DocumentService) IngestDocument(ctx context.Context, collectionId, content string, metadata map[string]any, config ChunkingConfig) (int, []string, error) {
+	if collectionId == "" {
+		return 0, nil, errors.New("collection_id is required")
+	}
+	if content == "" {
+		return 0, nil, errors.New("content is required")
+	}
+	if metadata == nil {
+		metadata = make(map[string]any)
+	}
+
+	// 1. Retrieve the collection's embedding provider and model
+	provider, model, err := s.getCollectionEmbeddingInfo(ctx, collectionId)
+	if err != nil {
+		return 0, nil, err
+	}
+	if provider == "" {
+		return 0, nil, errors.New("collection is not configured for automatic embedding generation (no embedding_provider set)")
+	}
+
+	// 2. Perform chunking
+	c := chunker.GetChunker(config.Strategy)
+	chunks := c.Chunk(content, config.ChunkSize, config.ChunkOverlap)
+	if len(chunks) == 0 {
+		return 0, nil, nil
+	}
+
+	// 3. Generate embeddings
+	client, err := embedding.GetClient(provider, model)
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to initialize embedding client: %w", err)
+	}
+
+	embeddings, err := client.GenerateEmbeddings(ctx, chunks)
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to generate embeddings: %w", err)
+	}
+
+	// 4. Validate embedding dimension
+	dimension, _, err := s.getCollectionInfo(ctx, collectionId)
+	if err != nil {
+		return 0, nil, err
+	}
+	if len(embeddings) > 0 && len(embeddings[0]) != dimension {
+		return 0, nil, fmt.Errorf("generated embedding dimension %d does not match collection expectation %d", len(embeddings[0]), dimension)
+	}
+
+	// 5. Prepare documents for BatchInsert
+	docsToInsert := make([]models.Document, len(chunks))
+	for i, chunk := range chunks {
+		docsToInsert[i] = models.Document{
+			CollectionId: collectionId,
+			Content:      chunk,
+			Vector:       embeddings[i],
+			Metadata:     metadata,
+		}
+	}
+
+	// 6. BatchInsert
+	count, insertedDocs, err := s.BatchInsert(ctx, collectionId, docsToInsert)
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to batch insert chunks: %w", err)
+	}
+
+	insertedIds := make([]string, len(insertedDocs))
+	for i, doc := range insertedDocs {
+		insertedIds[i] = doc.Id
+	}
+
+	return count, insertedIds, nil
+}
+
+func (s *DocumentService) getCollectionEmbeddingInfo(ctx context.Context, collectionId string) (string, string, error) {
+	if _, _, provider, model, ok := s.collectionCache.GetInfo(collectionId); ok {
+		return provider, model, nil
+	}
+
+	// Cache miss: query DB and populate cache
+	collection, err := s.collectionRepo.ListById(ctx, collectionId)
+	if err == sql.ErrNoRows {
+		return "", "", fmt.Errorf("collection_id %s not found", collectionId)
+	}
+	if err != nil {
+		return "", "", fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	s.collectionCache.Insert(collectionId, int32(collection.VectorDimension), collection.DistanceMetric, collection.EmbeddingProvider, collection.EmbeddingModel)
+	return collection.EmbeddingProvider, collection.EmbeddingModel, nil
 }

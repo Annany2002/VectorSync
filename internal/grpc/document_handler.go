@@ -54,6 +54,42 @@ func (h *DocumentHandler) CreateDocument(ctx context.Context, req *pb.CreateDocu
 	}, nil
 }
 
+// IngestDocument ingests a raw document by chunking it, generating embeddings, and storing them
+func (h *DocumentHandler) IngestDocument(ctx context.Context, req *pb.IngestDocumentRequest) (*pb.IngestDocumentResponse, error) {
+	collectionId := req.GetCollectionId()
+	content := req.GetContent()
+
+	// Convert protobuf map[string]*Struct to map[string]any
+	var metadata map[string]any
+	if req.GetMetadata() != nil {
+		metadata = make(map[string]any)
+		for key, value := range req.GetMetadata() {
+			metadata[key] = value.AsMap()
+		}
+	}
+
+	// Map proto chunking config to services.ChunkingConfig
+	var chunkingConfig services.ChunkingConfig
+	if req.GetChunkingConfig() != nil {
+		chunkingConfig = services.ChunkingConfig{
+			Strategy:     req.GetChunkingConfig().GetStrategy(),
+			ChunkSize:    int(req.GetChunkingConfig().GetChunkSize()),
+			ChunkOverlap: int(req.GetChunkingConfig().GetChunkOverlap()),
+		}
+	}
+
+	// Call service layer to ingest the document
+	count, ids, err := h.documentService.IngestDocument(ctx, collectionId, content, metadata, chunkingConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.IngestDocumentResponse{
+		ChunkCount:  int32(count),
+		DocumentIds: ids,
+	}, nil
+}
+
 // UpsertDocument creates or updates a document with a specific ID
 func (h *DocumentHandler) UpsertDocument(ctx context.Context, req *pb.UpsertDocumentRequest) (*pb.UpsertDocumentResponse, error) {
 	// Extract the fields from request

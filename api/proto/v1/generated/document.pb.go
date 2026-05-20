@@ -1420,6 +1420,198 @@ func (x *HybridSearchResponse) GetResults() []*SearchResult {
 	return nil
 }
 
+// ChunkingConfig represents parameters for text chunking
+type ChunkingConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Strategy to use for chunking: "fixed", "recursive", "sentence"
+	Strategy string `protobuf:"bytes,1,opt,name=strategy,proto3" json:"strategy,omitempty"`
+	// Target size of each chunk (characters for char chunker, etc.)
+	ChunkSize int32 `protobuf:"varint,2,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
+	// Overlap size between adjacent chunks
+	ChunkOverlap  int32 `protobuf:"varint,3,opt,name=chunk_overlap,json=chunkOverlap,proto3" json:"chunk_overlap,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChunkingConfig) Reset() {
+	*x = ChunkingConfig{}
+	mi := &file_document_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChunkingConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChunkingConfig) ProtoMessage() {}
+
+func (x *ChunkingConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChunkingConfig.ProtoReflect.Descriptor instead.
+func (*ChunkingConfig) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ChunkingConfig) GetStrategy() string {
+	if x != nil {
+		return x.Strategy
+	}
+	return ""
+}
+
+func (x *ChunkingConfig) GetChunkSize() int32 {
+	if x != nil {
+		return x.ChunkSize
+	}
+	return 0
+}
+
+func (x *ChunkingConfig) GetChunkOverlap() int32 {
+	if x != nil {
+		return x.ChunkOverlap
+	}
+	return 0
+}
+
+// IngestDocumentRequest represents a request to ingest a raw text document
+type IngestDocumentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collection_id to ingest the document into
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// raw text content to be chunked and embedded
+	Content string `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	// metadata to be applied to all generated document chunks
+	Metadata map[string]*structpb.Struct `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// chunking configuration (falls back to defaults if not specified)
+	ChunkingConfig *ChunkingConfig `protobuf:"bytes,4,opt,name=chunking_config,json=chunkingConfig,proto3" json:"chunking_config,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *IngestDocumentRequest) Reset() {
+	*x = IngestDocumentRequest{}
+	mi := &file_document_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngestDocumentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngestDocumentRequest) ProtoMessage() {}
+
+func (x *IngestDocumentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngestDocumentRequest.ProtoReflect.Descriptor instead.
+func (*IngestDocumentRequest) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *IngestDocumentRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *IngestDocumentRequest) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *IngestDocumentRequest) GetMetadata() map[string]*structpb.Struct {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *IngestDocumentRequest) GetChunkingConfig() *ChunkingConfig {
+	if x != nil {
+		return x.ChunkingConfig
+	}
+	return nil
+}
+
+// IngestDocumentResponse represents a response for document ingestion
+type IngestDocumentResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// total number of document chunks created and inserted
+	ChunkCount int32 `protobuf:"varint,1,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	// ids of the inserted document chunks
+	DocumentIds   []string `protobuf:"bytes,2,rep,name=document_ids,json=documentIds,proto3" json:"document_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IngestDocumentResponse) Reset() {
+	*x = IngestDocumentResponse{}
+	mi := &file_document_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngestDocumentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngestDocumentResponse) ProtoMessage() {}
+
+func (x *IngestDocumentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_document_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngestDocumentResponse.ProtoReflect.Descriptor instead.
+func (*IngestDocumentResponse) Descriptor() ([]byte, []int) {
+	return file_document_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *IngestDocumentResponse) GetChunkCount() int32 {
+	if x != nil {
+		return x.ChunkCount
+	}
+	return 0
+}
+
+func (x *IngestDocumentResponse) GetDocumentIds() []string {
+	if x != nil {
+		return x.DocumentIds
+	}
+	return nil
+}
+
 var File_document_proto protoreflect.FileDescriptor
 
 const file_document_proto_rawDesc = "" +
@@ -1535,9 +1727,28 @@ const file_document_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
 	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"H\n" +
 	"\x14HybridSearchResponse\x120\n" +
-	"\aresults\x18\x01 \x03(\v2\x16.document.SearchResultR\aresults2\xca\t\n" +
+	"\aresults\x18\x01 \x03(\v2\x16.document.SearchResultR\aresults\"p\n" +
+	"\x0eChunkingConfig\x12\x1a\n" +
+	"\bstrategy\x18\x01 \x01(\tR\bstrategy\x12\x1d\n" +
+	"\n" +
+	"chunk_size\x18\x02 \x01(\x05R\tchunkSize\x12#\n" +
+	"\rchunk_overlap\x18\x03 \x01(\x05R\fchunkOverlap\"\xba\x02\n" +
+	"\x15IngestDocumentRequest\x12#\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\x12I\n" +
+	"\bmetadata\x18\x03 \x03(\v2-.document.IngestDocumentRequest.MetadataEntryR\bmetadata\x12A\n" +
+	"\x0fchunking_config\x18\x04 \x01(\v2\x18.document.ChunkingConfigR\x0echunkingConfig\x1aT\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\\\n" +
+	"\x16IngestDocumentResponse\x12\x1f\n" +
+	"\vchunk_count\x18\x01 \x01(\x05R\n" +
+	"chunkCount\x12!\n" +
+	"\fdocument_ids\x18\x02 \x03(\tR\vdocumentIds2\xc4\n" +
+	"\n" +
 	"\x0fDocumentService\x12q\n" +
-	"\x0eCreateDocument\x12\x1f.document.CreateDocumentRequest\x1a .document.CreateDocumentResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/documents\x12v\n" +
+	"\x0eCreateDocument\x12\x1f.document.CreateDocumentRequest\x1a .document.CreateDocumentResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/documents\x12x\n" +
+	"\x0eIngestDocument\x12\x1f.document.IngestDocumentRequest\x1a .document.IngestDocumentResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/documents/ingest\x12v\n" +
 	"\x0eUpsertDocument\x12\x1f.document.UpsertDocumentRequest\x1a .document.UpsertDocumentResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/api/v1/documents/{id}\x12m\n" +
 	"\fListDocument\x12\x1d.document.ListDocumentRequest\x1a\x1e.document.ListDocumentResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/documents/{id}\x12k\n" +
 	"\rListDocuments\x12\x1e.document.ListDocumentsRequest\x1a\x1f.document.ListDocumentsResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/documents\x12s\n" +
@@ -1560,7 +1771,7 @@ func file_document_proto_rawDescGZIP() []byte {
 	return file_document_proto_rawDescData
 }
 
-var file_document_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_document_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_document_proto_goTypes = []any{
 	(*Document)(nil),                    // 0: document.Document
 	(*CreateDocumentRequest)(nil),       // 1: document.CreateDocumentRequest
@@ -1584,64 +1795,73 @@ var file_document_proto_goTypes = []any{
 	(*BatchDeleteDocumentResponse)(nil), // 19: document.BatchDeleteDocumentResponse
 	(*HybridSearchRequest)(nil),         // 20: document.HybridSearchRequest
 	(*HybridSearchResponse)(nil),        // 21: document.HybridSearchResponse
-	nil,                                 // 22: document.Document.MetadataEntry
-	nil,                                 // 23: document.CreateDocumentRequest.MetadataEntry
-	nil,                                 // 24: document.SearchDocumentRequest.MetadataFilterEntry
-	nil,                                 // 25: document.UpsertDocumentRequest.MetadataEntry
-	nil,                                 // 26: document.HybridSearchRequest.MetadataEntry
-	(*timestamppb.Timestamp)(nil),       // 27: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),             // 28: google.protobuf.Struct
+	(*ChunkingConfig)(nil),              // 22: document.ChunkingConfig
+	(*IngestDocumentRequest)(nil),       // 23: document.IngestDocumentRequest
+	(*IngestDocumentResponse)(nil),      // 24: document.IngestDocumentResponse
+	nil,                                 // 25: document.Document.MetadataEntry
+	nil,                                 // 26: document.CreateDocumentRequest.MetadataEntry
+	nil,                                 // 27: document.SearchDocumentRequest.MetadataFilterEntry
+	nil,                                 // 28: document.UpsertDocumentRequest.MetadataEntry
+	nil,                                 // 29: document.HybridSearchRequest.MetadataEntry
+	nil,                                 // 30: document.IngestDocumentRequest.MetadataEntry
+	(*timestamppb.Timestamp)(nil),       // 31: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),             // 32: google.protobuf.Struct
 }
 var file_document_proto_depIdxs = []int32{
-	27, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
-	27, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
-	22, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
-	23, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
-	27, // 4: document.CreateDocumentResponse.created_at:type_name -> google.protobuf.Timestamp
-	27, // 5: document.CreateDocumentResponse.updated_at:type_name -> google.protobuf.Timestamp
+	31, // 0: document.Document.created_at:type_name -> google.protobuf.Timestamp
+	31, // 1: document.Document.updated_at:type_name -> google.protobuf.Timestamp
+	25, // 2: document.Document.metadata:type_name -> document.Document.MetadataEntry
+	26, // 3: document.CreateDocumentRequest.metadata:type_name -> document.CreateDocumentRequest.MetadataEntry
+	31, // 4: document.CreateDocumentResponse.created_at:type_name -> google.protobuf.Timestamp
+	31, // 5: document.CreateDocumentResponse.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 6: document.ListDocumentResponse.document:type_name -> document.Document
 	0,  // 7: document.ListDocumentsResponse.documents:type_name -> document.Document
-	27, // 8: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
-	24, // 9: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
+	31, // 8: document.DeleteDocumentResponse.deleted_at:type_name -> google.protobuf.Timestamp
+	27, // 9: document.SearchDocumentRequest.metadata_filter:type_name -> document.SearchDocumentRequest.MetadataFilterEntry
 	0,  // 10: document.SearchResult.document:type_name -> document.Document
 	10, // 11: document.SearchDocumentResponse.results:type_name -> document.SearchResult
-	25, // 12: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
-	27, // 13: document.UpsertDocumentResponse.created_at:type_name -> google.protobuf.Timestamp
-	27, // 14: document.UpsertDocumentResponse.updated_at:type_name -> google.protobuf.Timestamp
+	28, // 12: document.UpsertDocumentRequest.metadata:type_name -> document.UpsertDocumentRequest.MetadataEntry
+	31, // 13: document.UpsertDocumentResponse.created_at:type_name -> google.protobuf.Timestamp
+	31, // 14: document.UpsertDocumentResponse.updated_at:type_name -> google.protobuf.Timestamp
 	10, // 15: document.FullTextSearchResponse.result:type_name -> document.SearchResult
 	1,  // 16: document.BatchInsertDocumentRequest.documents:type_name -> document.CreateDocumentRequest
-	26, // 17: document.HybridSearchRequest.metadata:type_name -> document.HybridSearchRequest.MetadataEntry
+	29, // 17: document.HybridSearchRequest.metadata:type_name -> document.HybridSearchRequest.MetadataEntry
 	10, // 18: document.HybridSearchResponse.results:type_name -> document.SearchResult
-	28, // 19: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
-	28, // 20: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	28, // 21: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
-	28, // 22: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	28, // 23: document.HybridSearchRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
-	1,  // 24: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
-	12, // 25: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
-	3,  // 26: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
-	5,  // 27: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
-	7,  // 28: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
-	9,  // 29: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
-	14, // 30: document.DocumentService.FullTextSearch:input_type -> document.FullTextSearchRequest
-	16, // 31: document.DocumentService.BatchInsert:input_type -> document.BatchInsertDocumentRequest
-	18, // 32: document.DocumentService.BatchDelete:input_type -> document.BatchDeleteDocumentRequest
-	20, // 33: document.DocumentService.HybridSearch:input_type -> document.HybridSearchRequest
-	2,  // 34: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
-	13, // 35: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
-	4,  // 36: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
-	6,  // 37: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
-	8,  // 38: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
-	11, // 39: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
-	15, // 40: document.DocumentService.FullTextSearch:output_type -> document.FullTextSearchResponse
-	17, // 41: document.DocumentService.BatchInsert:output_type -> document.BatchInsertDocumentResponse
-	19, // 42: document.DocumentService.BatchDelete:output_type -> document.BatchDeleteDocumentResponse
-	21, // 43: document.DocumentService.HybridSearch:output_type -> document.HybridSearchResponse
-	34, // [34:44] is the sub-list for method output_type
-	24, // [24:34] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	30, // 19: document.IngestDocumentRequest.metadata:type_name -> document.IngestDocumentRequest.MetadataEntry
+	22, // 20: document.IngestDocumentRequest.chunking_config:type_name -> document.ChunkingConfig
+	32, // 21: document.Document.MetadataEntry.value:type_name -> google.protobuf.Struct
+	32, // 22: document.CreateDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	32, // 23: document.SearchDocumentRequest.MetadataFilterEntry.value:type_name -> google.protobuf.Struct
+	32, // 24: document.UpsertDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	32, // 25: document.HybridSearchRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	32, // 26: document.IngestDocumentRequest.MetadataEntry.value:type_name -> google.protobuf.Struct
+	1,  // 27: document.DocumentService.CreateDocument:input_type -> document.CreateDocumentRequest
+	23, // 28: document.DocumentService.IngestDocument:input_type -> document.IngestDocumentRequest
+	12, // 29: document.DocumentService.UpsertDocument:input_type -> document.UpsertDocumentRequest
+	3,  // 30: document.DocumentService.ListDocument:input_type -> document.ListDocumentRequest
+	5,  // 31: document.DocumentService.ListDocuments:input_type -> document.ListDocumentsRequest
+	7,  // 32: document.DocumentService.DeleteDocument:input_type -> document.DeleteDocumentRequest
+	9,  // 33: document.DocumentService.SearchDocuments:input_type -> document.SearchDocumentRequest
+	14, // 34: document.DocumentService.FullTextSearch:input_type -> document.FullTextSearchRequest
+	16, // 35: document.DocumentService.BatchInsert:input_type -> document.BatchInsertDocumentRequest
+	18, // 36: document.DocumentService.BatchDelete:input_type -> document.BatchDeleteDocumentRequest
+	20, // 37: document.DocumentService.HybridSearch:input_type -> document.HybridSearchRequest
+	2,  // 38: document.DocumentService.CreateDocument:output_type -> document.CreateDocumentResponse
+	24, // 39: document.DocumentService.IngestDocument:output_type -> document.IngestDocumentResponse
+	13, // 40: document.DocumentService.UpsertDocument:output_type -> document.UpsertDocumentResponse
+	4,  // 41: document.DocumentService.ListDocument:output_type -> document.ListDocumentResponse
+	6,  // 42: document.DocumentService.ListDocuments:output_type -> document.ListDocumentsResponse
+	8,  // 43: document.DocumentService.DeleteDocument:output_type -> document.DeleteDocumentResponse
+	11, // 44: document.DocumentService.SearchDocuments:output_type -> document.SearchDocumentResponse
+	15, // 45: document.DocumentService.FullTextSearch:output_type -> document.FullTextSearchResponse
+	17, // 46: document.DocumentService.BatchInsert:output_type -> document.BatchInsertDocumentResponse
+	19, // 47: document.DocumentService.BatchDelete:output_type -> document.BatchDeleteDocumentResponse
+	21, // 48: document.DocumentService.HybridSearch:output_type -> document.HybridSearchResponse
+	38, // [38:49] is the sub-list for method output_type
+	27, // [27:38] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_document_proto_init() }
@@ -1655,7 +1875,7 @@ func file_document_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_document_proto_rawDesc), len(file_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -80,6 +80,9 @@ migrate-up:
 	psql $$DB_URL -f migrations/002_create_collections.up.sql
 	psql $$DB_URL -f migrations/003_create_documents.up.sql
 	psql $$DB_URL -f migrations/004_add_distance_metric.up.sql
+	psql $$DB_URL -f migrations/005_fix_fts_index_size.up.sql
+	psql $$DB_URL -f migrations/006_add_collection_embedding_config.up.sql
+
 
 # Install development tools
 install-tools:

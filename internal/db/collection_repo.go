@@ -33,16 +33,16 @@ func distanceMetricOpsClass(metric string) string {
 }
 
 // Create creates a new collection and builds a partial HNSW index for it
-func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
+func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, embeddingProvider, embeddingModel string) (*models.Collection, error) {
 	// Default distance metric to cosine
 	if distanceMetric == "" {
 		distanceMetric = "cosine"
 	}
 
 	insertQuery := `
-		INSERT INTO collections (name, vector_dim, metadata_schema, distance_metric)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, name, vector_dim, distance_metric, metadata_schema, created_at, updated_at, document_count
+		INSERT INTO collections (name, vector_dim, metadata_schema, distance_metric, embedding_provider, embedding_model)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, name, vector_dim, distance_metric, metadata_schema, embedding_provider, embedding_model, created_at, updated_at, document_count
 	`
 
 	// Convert map to JSON for JSONB column
@@ -51,21 +51,39 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 		return nil, err
 	}
 
+	var ep, em sql.NullString
+	if embeddingProvider != "" {
+		ep = sql.NullString{String: embeddingProvider, Valid: true}
+	}
+	if embeddingModel != "" {
+		em = sql.NullString{String: embeddingModel, Valid: true}
+	}
+
 	var collection models.Collection
 	var metadataBytes []byte
+	var retEp, retEm sql.NullString
 
-	err = r.db.QueryRowContext(ctx, insertQuery, name, vectorDimension, metadataJSON, distanceMetric).Scan(
+	err = r.db.QueryRowContext(ctx, insertQuery, name, vectorDimension, metadataJSON, distanceMetric, ep, em).Scan(
 		&collection.Id,
 		&collection.Name,
 		&collection.VectorDimension,
 		&collection.DistanceMetric,
 		&metadataBytes,
+		&retEp,
+		&retEm,
 		&collection.CreatedAt,
 		&collection.UpdatedAt,
 		&collection.DocumentCount,
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if retEp.Valid {
+		collection.EmbeddingProvider = retEp.String
+	}
+	if retEm.Valid {
+		collection.EmbeddingModel = retEm.String
 	}
 
 	// Convert JSON bytes back to map
@@ -100,6 +118,7 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 func scanCollection(row interface{ Scan(dest ...any) error }) (*models.Collection, error) {
 	var collection models.Collection
 	var metadataBytes []byte
+	var ep, em sql.NullString
 
 	err := row.Scan(
 		&collection.Id,
@@ -107,12 +126,21 @@ func scanCollection(row interface{ Scan(dest ...any) error }) (*models.Collectio
 		&collection.VectorDimension,
 		&collection.DistanceMetric,
 		&metadataBytes,
+		&ep,
+		&em,
 		&collection.CreatedAt,
 		&collection.UpdatedAt,
 		&collection.DocumentCount,
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if ep.Valid {
+		collection.EmbeddingProvider = ep.String
+	}
+	if em.Valid {
+		collection.EmbeddingModel = em.String
 	}
 
 	if len(metadataBytes) > 0 {
@@ -125,7 +153,7 @@ func scanCollection(row interface{ Scan(dest ...any) error }) (*models.Collectio
 	return &collection, nil
 }
 
-const collectionColumns = "id, name, vector_dim, distance_metric, metadata_schema, created_at, updated_at, document_count"
+const collectionColumns = "id, name, vector_dim, distance_metric, metadata_schema, embedding_provider, embedding_model, created_at, updated_at, document_count"
 
 // List returns collections with pagination support
 func (r *CollectionRepo) List(ctx context.Context, limit, offset int) ([]models.Collection, error) {

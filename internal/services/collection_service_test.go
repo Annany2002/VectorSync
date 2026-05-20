@@ -11,14 +11,14 @@ import (
 
 // mockCollectionRepo implements CollectionRepository for testing.
 type mockCollectionRepo struct {
-	CreateFn     func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error)
+	CreateFn     func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, embeddingProvider, embeddingModel string) (*models.Collection, error)
 	ListFn       func(ctx context.Context, limit, offset int) ([]models.Collection, error)
 	ListByIdFn   func(ctx context.Context, collectionId string) (*models.Collection, error)
 	DeleteByIdFn func(ctx context.Context, collectionId string) (int64, error)
 }
 
-func (m *mockCollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
-	return m.CreateFn(ctx, name, vectorDimension, metadataSchema, distanceMetric)
+func (m *mockCollectionRepo) Create(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, embeddingProvider, embeddingModel string) (*models.Collection, error) {
+	return m.CreateFn(ctx, name, vectorDimension, metadataSchema, distanceMetric, embeddingProvider, embeddingModel)
 }
 
 func (m *mockCollectionRepo) List(ctx context.Context, limit, offset int) ([]models.Collection, error) {
@@ -36,7 +36,7 @@ func (m *mockCollectionRepo) DeleteById(ctx context.Context, collectionId string
 func TestCreateCollection(t *testing.T) {
 	t.Run("empty name returns error", func(t *testing.T) {
 		svc := NewCollectionService(&mockCollectionRepo{})
-		_, err := svc.CreateCollection(context.Background(), "", 128, nil, "cosine")
+		_, err := svc.CreateCollection(context.Background(), "", 128, nil, "cosine", "", "")
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -47,7 +47,7 @@ func TestCreateCollection(t *testing.T) {
 
 	t.Run("zero dimension returns error", func(t *testing.T) {
 		svc := NewCollectionService(&mockCollectionRepo{})
-		_, err := svc.CreateCollection(context.Background(), "test", 0, nil, "cosine")
+		_, err := svc.CreateCollection(context.Background(), "test", 0, nil, "cosine", "", "")
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -58,7 +58,7 @@ func TestCreateCollection(t *testing.T) {
 
 	t.Run("negative dimension returns error", func(t *testing.T) {
 		svc := NewCollectionService(&mockCollectionRepo{})
-		_, err := svc.CreateCollection(context.Background(), "test", -5, nil, "cosine")
+		_, err := svc.CreateCollection(context.Background(), "test", -5, nil, "cosine", "", "")
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -69,7 +69,7 @@ func TestCreateCollection(t *testing.T) {
 
 	t.Run("invalid distance metric returns error", func(t *testing.T) {
 		svc := NewCollectionService(&mockCollectionRepo{})
-		_, err := svc.CreateCollection(context.Background(), "test", 128, nil, "manhattan")
+		_, err := svc.CreateCollection(context.Background(), "test", 128, nil, "manhattan", "", "")
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -81,13 +81,13 @@ func TestCreateCollection(t *testing.T) {
 	t.Run("empty distance metric defaults to cosine", func(t *testing.T) {
 		var capturedMetric string
 		repo := &mockCollectionRepo{
-			CreateFn: func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
+			CreateFn: func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, ep, em string) (*models.Collection, error) {
 				capturedMetric = distanceMetric
 				return &models.Collection{Name: name, DistanceMetric: distanceMetric}, nil
 			},
 		}
 		svc := NewCollectionService(repo)
-		_, err := svc.CreateCollection(context.Background(), "test", 128, nil, "")
+		_, err := svc.CreateCollection(context.Background(), "test", 128, nil, "", "", "")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -98,12 +98,12 @@ func TestCreateCollection(t *testing.T) {
 
 	t.Run("duplicate name returns collection already exists", func(t *testing.T) {
 		repo := &mockCollectionRepo{
-			CreateFn: func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
+			CreateFn: func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, ep, em string) (*models.Collection, error) {
 				return nil, errors.New("duplicate key value violates unique constraint")
 			},
 		}
 		svc := NewCollectionService(repo)
-		_, err := svc.CreateCollection(context.Background(), "existing", 128, nil, "cosine")
+		_, err := svc.CreateCollection(context.Background(), "existing", 128, nil, "cosine", "", "")
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -120,12 +120,12 @@ func TestCreateCollection(t *testing.T) {
 			DistanceMetric:  "euclidean",
 		}
 		repo := &mockCollectionRepo{
-			CreateFn: func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string) (*models.Collection, error) {
+			CreateFn: func(ctx context.Context, name string, vectorDimension int32, metadataSchema map[string]any, distanceMetric string, ep, em string) (*models.Collection, error) {
 				return expected, nil
 			},
 		}
 		svc := NewCollectionService(repo)
-		got, err := svc.CreateCollection(context.Background(), "my-collection", 256, nil, "euclidean")
+		got, err := svc.CreateCollection(context.Background(), "my-collection", 256, nil, "euclidean", "", "")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

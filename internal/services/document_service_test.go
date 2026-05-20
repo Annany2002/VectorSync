@@ -106,7 +106,7 @@ func (m *mockDocumentRepo) HybridSearch(ctx context.Context, collectionId, query
 // (collection "col-1" → dim=3, metric="cosine").
 func newDocService(docRepo *mockDocumentRepo, colRepo *mockCollectionRepo) *DocumentService {
 	cache := db.NewCollectionCache()
-	cache.Insert("col-1", 3, "cosine")
+	cache.Insert("col-1", 3, "cosine", "", "")
 	return NewDocumentService(docRepo, colRepo, cache)
 }
 

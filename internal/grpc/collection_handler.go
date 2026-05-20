@@ -39,7 +39,7 @@ func (h *CollectionHandler) CreateCollection(ctx context.Context, req *pb.Create
 	}
 
 	// Call service layer to create the collection
-	collection, err := h.collectionService.CreateCollection(ctx, name, vectorDimension, metadataSchema, distanceMetric)
+	collection, err := h.collectionService.CreateCollection(ctx, name, vectorDimension, metadataSchema, distanceMetric, req.GetEmbeddingProvider(), req.GetEmbeddingModel())
 	if err != nil {
 		return nil, err
 	}
@@ -134,5 +134,7 @@ func convertToProtoCollection(c *models.Collection) *pb.Collection {
 		MetadataSchema:  metadataSchemaProto,
 		DocumentCount:   c.DocumentCount,
 		DistanceMetric:  c.DistanceMetric,
+		EmbeddingProvider: c.EmbeddingProvider,
+		EmbeddingModel:    c.EmbeddingModel,
 	}
 }
