@@ -232,12 +232,48 @@ message HybridSearchResponse{
     repeated SearchResult results = 1;
 }
 
+// ChunkingConfig represents parameters for text chunking
+message ChunkingConfig {
+    // Strategy to use for chunking: "fixed", "recursive", "sentence"
+    string strategy = 1;
+    // Target size of each chunk (characters for char chunker, etc.)
+    int32 chunk_size = 2;
+    // Overlap size between adjacent chunks
+    int32 chunk_overlap = 3;
+}
+
+// IngestDocumentRequest represents a request to ingest a raw text document
+message IngestDocumentRequest {
+    // collection_id to ingest the document into
+    string collection_id = 1;
+    // raw text content to be chunked and embedded
+    string content = 2;
+    // metadata to be applied to all generated document chunks
+    map<string, google.protobuf.Struct> metadata = 3;
+    // chunking configuration (falls back to defaults if not specified)
+    ChunkingConfig chunking_config = 4;
+}
+
+// IngestDocumentResponse represents a response for document ingestion
+message IngestDocumentResponse {
+    // total number of document chunks created and inserted
+    int32 chunk_count = 1;
+    // ids of the inserted document chunks
+    repeated string document_ids = 2;
+}
+
 // DocumentService provides document management operations
 service DocumentService {
     rpc CreateDocument (CreateDocumentRequest) returns (CreateDocumentResponse) {
         option (google.api.http) = {
             post: "/api/v1/documents"
             body : "*"
+        };
+    };
+    rpc IngestDocument (IngestDocumentRequest) returns (IngestDocumentResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/documents/ingest"
+            body: "*"
         };
     };
     rpc UpsertDocument (UpsertDocumentRequest) returns (UpsertDocumentResponse) {

@@ -43,6 +43,10 @@ type Collection struct {
 	DocumentCount int64 `protobuf:"varint,7,opt,name=document_count,json=documentCount,proto3" json:"document_count,omitempty"`
 	// distance metric for vector search (cosine, euclidean, inner_product)
 	DistanceMetric string `protobuf:"bytes,8,opt,name=distance_metric,json=distanceMetric,proto3" json:"distance_metric,omitempty"`
+	// embedding provider (e.g. openai, ollama, cohere)
+	EmbeddingProvider string `protobuf:"bytes,9,opt,name=embedding_provider,json=embeddingProvider,proto3" json:"embedding_provider,omitempty"`
+	// embedding model
+	EmbeddingModel string `protobuf:"bytes,10,opt,name=embedding_model,json=embeddingModel,proto3" json:"embedding_model,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -133,6 +137,20 @@ func (x *Collection) GetDistanceMetric() string {
 	return ""
 }
 
+func (x *Collection) GetEmbeddingProvider() string {
+	if x != nil {
+		return x.EmbeddingProvider
+	}
+	return ""
+}
+
+func (x *Collection) GetEmbeddingModel() string {
+	if x != nil {
+		return x.EmbeddingModel
+	}
+	return ""
+}
+
 // CreateCollectionRequest represents a request to create a collection
 type CreateCollectionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -144,6 +162,10 @@ type CreateCollectionRequest struct {
 	MetadataSchema map[string]*structpb.Struct `protobuf:"bytes,3,rep,name=metadata_schema,json=metadataSchema,proto3" json:"metadata_schema,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// distance metric for vector search (cosine, euclidean, inner_product; default: cosine)
 	DistanceMetric string `protobuf:"bytes,4,opt,name=distance_metric,json=distanceMetric,proto3" json:"distance_metric,omitempty"`
+	// embedding provider (e.g. openai, ollama, cohere)
+	EmbeddingProvider string `protobuf:"bytes,5,opt,name=embedding_provider,json=embeddingProvider,proto3" json:"embedding_provider,omitempty"`
+	// embedding model
+	EmbeddingModel string `protobuf:"bytes,6,opt,name=embedding_model,json=embeddingModel,proto3" json:"embedding_model,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -202,6 +224,20 @@ func (x *CreateCollectionRequest) GetMetadataSchema() map[string]*structpb.Struc
 func (x *CreateCollectionRequest) GetDistanceMetric() string {
 	if x != nil {
 		return x.DistanceMetric
+	}
+	return ""
+}
+
+func (x *CreateCollectionRequest) GetEmbeddingProvider() string {
+	if x != nil {
+		return x.EmbeddingProvider
+	}
+	return ""
+}
+
+func (x *CreateCollectionRequest) GetEmbeddingModel() string {
+	if x != nil {
+		return x.EmbeddingModel
 	}
 	return ""
 }
@@ -559,7 +595,7 @@ var File_collection_proto protoreflect.FileDescriptor
 const file_collection_proto_rawDesc = "" +
 	"\n" +
 	"\x10collection.proto\x12\n" +
-	"collection\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\xd2\x03\n" +
+	"collection\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\xaa\x04\n" +
 	"\n" +
 	"Collection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
@@ -571,15 +607,20 @@ const file_collection_proto_rawDesc = "" +
 	"\x10vector_dimension\x18\x05 \x01(\x05R\x0fvectorDimension\x12S\n" +
 	"\x0fmetadata_schema\x18\x06 \x03(\v2*.collection.Collection.MetadataSchemaEntryR\x0emetadataSchema\x12%\n" +
 	"\x0edocument_count\x18\a \x01(\x03R\rdocumentCount\x12'\n" +
-	"\x0fdistance_metric\x18\b \x01(\tR\x0edistanceMetric\x1aZ\n" +
+	"\x0fdistance_metric\x18\b \x01(\tR\x0edistanceMetric\x12-\n" +
+	"\x12embedding_provider\x18\t \x01(\tR\x11embeddingProvider\x12'\n" +
+	"\x0fembedding_model\x18\n" +
+	" \x01(\tR\x0eembeddingModel\x1aZ\n" +
 	"\x13MetadataSchemaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
-	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\xbf\x02\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"\x97\x03\n" +
 	"\x17CreateCollectionRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12)\n" +
 	"\x10vector_dimension\x18\x02 \x01(\x05R\x0fvectorDimension\x12`\n" +
 	"\x0fmetadata_schema\x18\x03 \x03(\v27.collection.CreateCollectionRequest.MetadataSchemaEntryR\x0emetadataSchema\x12'\n" +
-	"\x0fdistance_metric\x18\x04 \x01(\tR\x0edistanceMetric\x1aZ\n" +
+	"\x0fdistance_metric\x18\x04 \x01(\tR\x0edistanceMetric\x12-\n" +
+	"\x12embedding_provider\x18\x05 \x01(\tR\x11embeddingProvider\x12'\n" +
+	"\x0fembedding_model\x18\x06 \x01(\tR\x0eembeddingModel\x1aZ\n" +
 	"\x13MetadataSchemaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
 	"\x05value\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x05value:\x028\x01\"R\n" +
