@@ -1,0 +1,219 @@
+name: CI
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  lint-and-format:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
+
+      - name: Check Go formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "The following files are not formatted with gofmt:"
+            gofmt -l .
+            echo "Run 'make format' to fix formatting."
+            exit 1
+          fi
+          echo "All Go files are properly formatted."
+
+      - name: Check Go imports
+        run: |
+          if [ -n "$(goimports -l .)" ]; then
+            echo "The following files have unorganized imports:"
+            goimports -l .
+            echo "Run 'make format' to fix imports."
+            exit 1
+          fi
+          echo "All imports are properly organized."
+
+  protobuf-sync:
+    name: Protobuf Compilation Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install Protobuf Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Install Go Protoc Generators
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+          go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.27.4
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Generate Protobuf Code
+        run: make proto
+
+      - name: Verify Generated Protobuf Files are In-Sync
+        run: |
+          # If make proto generated any changes, git diff will fail, forcing devs to check-in generated code.
+          git diff --exit-code
+          if [ $? -ne 0 ]; then
+            echo "CRITICAL: Generated protobuf code is out-of-sync with .proto definitions. Run 'make proto' locally and commit the changes."
+            exit 1
+          fi
+          echo "Generated protobuf code is in-sync."
+
+  tests:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: vectorsync_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Apply Database Migrations
+        env:
+          DB_URL: postgres://test_user:test_password@localhost:5432/vectorsync_test?sslmode=disable
+        run: |
+          for file in migrations/*.up.sql; do
+            echo "Applying migration: $file"
+            psql "$DB_URL" -f "$file"
+          done
+
+      - name: Run Go Unit Tests
+        env:
+          DB_URL: postgres://test_user:test_password@localhost:5432/vectorsync_test?sslmode=disable
+        run: go test -v -race ./...
+
+  e2e-stress-tests:
+    name: E2E Integration & Validation Suite
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, protobuf-sync, tests]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: vectorsync_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python Dependencies
+        run: pip install requests
+
+      - name: Install PostgreSQL Client & Run Migrations
+        env:
+          DB_URL: postgres://test_user:test_password@localhost:5432/vectorsync_test?sslmode=disable
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          for file in migrations/*.up.sql; do
+            psql "$DB_URL" -f "$file"
+          done
+
+      - name: Build VectorSync Application
+        run: make build
+
+      - name: Run VectorSync Server & E2E Validation Tests
+        env:
+          DB_URL: postgres://test_user:test_password@localhost:5432/vectorsync_test?sslmode=disable
+        run: |
+          # Start server in the background
+          ./bin/vectorsync > server.log 2>&1 &
+          SERVER_PID=$!
+          
+          # Wait for the HTTP gateway to become ready
+          echo "Waiting for VectorSync server to start on port 8080..."
+          FOR_TIMEOUT=15
+          until curl -s http://localhost:8080/api/v1/collections > /dev/null || [ $FOR_TIMEOUT -eq 0 ]; do
+            sleep 1
+            FOR_TIMEOUT=$((FOR_TIMEOUT-1))
+          done
+          
+          if [ $FOR_TIMEOUT -eq 0 ]; then
+            echo "CRITICAL: VectorSync server failed to start within timeout limit."
+            cat server.log
+            exit 1
+          fi
+          echo "VectorSync server is ready. Running E2E tests..."
+          
+          # Run Python integration and verification test scripts
+          python3 tests/stress/01_validation_edge_cases.py
+          python3 tests/stress/05_payload_limits.py
+          python3 tests/stress/06_collection_lifecycle.py
+          python3 tests/stress/07_raw_text_ingestion.py
+          
+          # Clean up
+          kill $SERVER_PID
+          wait $SERVER_PID || true
+          echo "All E2E validation tests passed successfully."
