@@ -4,6 +4,25 @@ All notable changes to VectorSync are documented in this file.
 
 ---
 
+## [v0.2.0] — 2026-05-20
+
+### Added
+- **Raw Text Ingestion Pipeline** — `POST /api/v1/documents/ingest` accepts raw text, chunks it, generates embeddings via external providers, and stores document chunks automatically
+- **Chunking Engine** (`internal/chunker`) — three strategies: `fixed` (character-based), `sentence` (punctuation-based), and `recursive` (separator hierarchy)
+- **Embedding Client Orchestration** (`internal/embedding`) — modular clients for OpenAI, Cohere, and local Ollama with configurable base URLs via `OPENAI_API_BASE`, `COHERE_API_BASE`, and `OLLAMA_HOST`
+- **Collection Embedding Config** — `embedding_provider` and `embedding_model` columns on `collections` table (migration 006); configured at collection creation time
+- **CI Pipeline** (`.github/workflows/ci.yaml`) — triggered on PRs to `dev`; runs golangci-lint, gofmt, goimports, protobuf sync verification, unit tests with pgvector service container (race detector enabled), and E2E Python stress tests against a live server
+- **Centralized Go Tests** — chunker, embedding client, and ingestion pipeline tests consolidated under `tests/`
+- **E2E Ingestion Test** (`tests/stress/07_raw_text_ingestion.py`) — validates ingestion endpoint with mock Ollama server
+
+### Changed
+- `CollectionCache` now stores `embedding_provider` and `embedding_model` alongside dimension and distance metric
+- `CollectionService.CreateCollection` accepts `provider` and `model` parameters
+- `CollectionHandler.CreateCollection` gRPC handler passes embedding fields to service layer
+- Moved GitHub Actions config from `.github/workflow/` (invalid) to `.github/workflows/` (correct)
+
+---
+
 ## [Unreleased]
 
 ### Performance

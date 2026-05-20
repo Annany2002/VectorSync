@@ -37,6 +37,12 @@ Create a new vector collection with a fixed dimension.
 | `vector_dimension` | integer | Yes | Fixed dimension for all vectors |
 | `distance_metric` | string | No | Distance metric: `cosine` (default), `euclidean`, or `inner_product` |
 | `metadata_schema` | object | No | Optional metadata schema definition |
+| `embedding_provider` | string | No | Embedding provider for ingestion: `openai`, `ollama`, or `cohere` |
+| `embedding_model` | string | No | Model name for the embedding provider (e.g., `text-embedding-3-small`) |
+
+<Info>
+`embedding_provider` and `embedding_model` are only required if you plan to use the `POST /api/v1/documents/ingest` endpoint for automatic embedding generation. They are not needed for direct vector insertion.
+</Info>
 
 ### Response
 
@@ -48,7 +54,9 @@ Create a new vector collection with a fixed dimension.
     "updatedAt": "2026-01-15T10:00:00Z",
     "name": "my_embeddings",
     "vectorDimension": 768,
-    "documentCount": "0"
+    "documentCount": "0",
+    "embeddingProvider": "openai",
+    "embeddingModel": "text-embedding-3-small"
   }
 }
 ```

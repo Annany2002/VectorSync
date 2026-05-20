@@ -7,6 +7,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Version](https://img.shields.io/badge/Go-1.25.4+-00ADD8?logo=go)](https://golang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-316192?logo=postgresql)](https://www.postgresql.org/)
+[![CI](https://github.com/Annany2002/VectorSync/actions/workflows/ci.yaml/badge.svg)](https://github.com/Annany2002/VectorSync/actions/workflows/ci.yaml)
 
 **A self-hostable vector search API built on PostgreSQL + pgvector.**
 
@@ -14,17 +15,21 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 
 ## Features
 
+- **Raw Text Ingestion Pipeline** -- Accept raw text, automatically chunk it, generate embeddings via external providers, and store the results (v0.2.0)
+- **Multi-Provider Embedding Support** -- OpenAI, Cohere, and local Ollama models for vector generation
+- **Pluggable Chunking Engine** -- Fixed-size, sentence-based, and recursive-character text splitting strategies
 - **Vector Similarity Search** -- Cosine, Euclidean, and Inner Product distance with configurable top-K and minimum threshold
 - **HNSW Indexing** -- Automatic per-collection HNSW index creation via pgvector for fast approximate nearest neighbor search
 - **Full-Text Search** -- PostgreSQL tsvector-based keyword search with relevance ranking
 - **Hybrid Search** -- Weighted combination of vector similarity and full-text search
 - **Configurable Distance Metrics** -- Choose `cosine`, `euclidean`, or `inner_product` per collection at creation time
 - **Dual API** -- Native gRPC (port 6309) and HTTP/JSON via grpc-gateway (port 8080)
-- **Collection Management** -- Organize embeddings by collection with fixed dimensions
+- **Collection Management** -- Organize embeddings by collection with fixed dimensions and optional embedding config
 - **CRUD + Upsert** -- Full document lifecycle with atomic insert-or-update
 - **Batch Operations** -- Insert and delete up to 1000 documents per request
 - **Metadata Filtering** -- JSONB-based filtering on search queries
 - **Optional Vector Returns** -- Exclude vectors from responses to reduce payload by ~97%
+- **CI Pipeline** -- Automated linting, formatting, protobuf sync, unit tests, and E2E validation on every PR
 
 ## Performance
 
@@ -66,10 +71,16 @@ cp .env.example .env
 
 docker-compose up -d
 
-# Create a collection
+# Create a collection (with optional embedding provider for ingestion)
 curl -X POST http://localhost:8080/api/v1/collections \
   -H "Content-Type: application/json" \
-  -d '{"name": "my_embeddings", "vector_dimension": 768, "distance_metric": "cosine"}'
+  -d '{
+    "name": "my_embeddings",
+    "vector_dimension": 768,
+    "distance_metric": "cosine",
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small"
+  }'
 
 # Insert a document
 curl -X POST http://localhost:8080/api/v1/documents \
@@ -109,6 +120,19 @@ curl -X POST http://localhost:8080/api/v1/documents/hybrid-search \
     "vector_weight": 0.7,
     "text_weight": 0.3
   }'
+
+# Ingest raw text (auto-chunk + auto-embed)
+curl -X POST http://localhost:8080/api/v1/documents/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "collection_id": "YOUR_COLLECTION_ID",
+    "content": "VectorSync is a self-hostable vector search API. It supports multiple embedding providers.",
+    "chunking_config": {
+      "strategy": "sentence",
+      "chunk_size": 500,
+      "chunk_overlap": 50
+    }
+  }'
 ```
 
 
@@ -135,6 +159,12 @@ curl -X POST http://localhost:8080/api/v1/documents/hybrid-search \
 ## Contributing
 
 Contributions are welcome! Please open an issue first to discuss changes.
+
+All PRs targeting `dev` are automatically validated by CI which runs:
+- **Lint & Format** — golangci-lint, gofmt, goimports
+- **Protobuf Sync** — Verifies generated `.pb.go` files match `.proto` definitions
+- **Unit Tests** — `go test -race ./...` against a pgvector service container
+- **E2E Validation** — Python stress tests against a live VectorSync server
 
 ## License
 

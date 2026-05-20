@@ -41,6 +41,18 @@ If `DB_URL` is set, it takes priority and the individual variables are ignored. 
 | `MAX_DB_CONNECTIONS` | `50` | Maximum database connections |
 | `IDLE_DB_CONNECTIONS` | `25` | Idle database connections |
 
+### Embedding Provider Variables
+
+These are only required if you use the raw text ingestion endpoint (`POST /api/v1/documents/ingest`).
+
+| Variable | Required For | Description |
+|----------|-------------|-------------|
+| `OPENAI_API_KEY` | `openai` provider | Your OpenAI API key |
+| `OPENAI_API_BASE` | `openai` provider | Custom OpenAI-compatible base URL (default: `https://api.openai.com`) |
+| `COHERE_API_KEY` | `cohere` provider | Your Cohere API key |
+| `COHERE_API_BASE` | `cohere` provider | Custom Cohere-compatible base URL (default: `https://api.cohere.com`) |
+| `OLLAMA_HOST` | `ollama` provider | Ollama server URL (default: `http://localhost:11434`) |
+
 ## Example Configuration
 
 <Tabs>
@@ -112,6 +124,7 @@ psql $DB_URL -f migrations/002_create_collections.up.sql
 psql $DB_URL -f migrations/003_create_documents.up.sql
 psql $DB_URL -f migrations/004_add_distance_metric.up.sql
 psql $DB_URL -f migrations/005_fix_fts_index_size.up.sql
+psql $DB_URL -f migrations/006_add_collection_embedding_config.up.sql
 ```
 
 ## Makefile Commands

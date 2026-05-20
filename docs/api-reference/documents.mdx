@@ -60,6 +60,80 @@ Insert a new document with a vector embedding into a collection.
 
 ---
 
+## Ingest Document
+
+Ingest raw text into a collection. VectorSync will automatically chunk the text, generate embeddings using the collection's configured embedding provider, and store the resulting document chunks.
+
+<Info>
+The collection must have `embedding_provider` and `embedding_model` configured at creation time. See [Create Collection](/api-reference/collections#create-collection).
+</Info>
+
+<Tabs>
+  <Tab title="HTTP">
+    ```bash
+    curl -X POST http://localhost:8080/api/v1/documents/ingest \
+      -H "Content-Type: application/json" \
+      -d '{
+        "collection_id": "COLLECTION_ID",
+        "content": "VectorSync is a self-hostable vector search API built on PostgreSQL and pgvector. It supports multiple embedding providers.",
+        "chunking_config": {
+          "strategy": "sentence",
+          "chunk_size": 500,
+          "chunk_overlap": 50
+        }
+      }'
+    ```
+  </Tab>
+  <Tab title="gRPC">
+    ```bash
+    grpcurl -plaintext -d '{
+      "collection_id": "COLLECTION_ID",
+      "content": "VectorSync is a self-hostable vector search API.",
+      "chunking_config": {
+        "strategy": "sentence",
+        "chunk_size": 500,
+        "chunk_overlap": 50
+      }
+    }' localhost:6309 document.DocumentService/IngestDocument
+    ```
+  </Tab>
+</Tabs>
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `collection_id` | string (UUID) | Yes | Target collection ID (must have embedding config) |
+| `content` | string | Yes | Raw text content to be chunked and embedded |
+| `metadata` | object | No | Key-value metadata applied to all generated chunks |
+| `chunking_config` | object | No | Chunking configuration (defaults to recursive, 500 chars, 50 overlap) |
+| `chunking_config.strategy` | string | No | Chunking strategy: `fixed`, `sentence`, or `recursive` (default) |
+| `chunking_config.chunk_size` | integer | No | Maximum characters per chunk (default: 500) |
+| `chunking_config.chunk_overlap` | integer | No | Character overlap between adjacent chunks (default: 0) |
+
+### Supported Embedding Providers
+
+| Provider | Environment Variable | Example Model |
+|----------|---------------------|---------------|
+| `openai` | `OPENAI_API_KEY` | `text-embedding-3-small` |
+| `cohere` | `COHERE_API_KEY` | `embed-english-v3.0` |
+| `ollama` | `OLLAMA_HOST` (optional) | `nomic-embed-text` |
+
+### Response
+
+```json
+{
+  "chunkCount": 3,
+  "documentIds": [
+    "a1b2c3d4-...",
+    "e5f6g7h8-...",
+    "i9j0k1l2-..."
+  ]
+}
+```
+
+---
+
 ## Upsert Document
 
 Insert a new document or update an existing one by ID.

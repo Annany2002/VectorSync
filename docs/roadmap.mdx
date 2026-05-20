@@ -44,16 +44,31 @@ Core vector search API with storage, retrieval, and three search modes.
 
 ---
 
-## v0.2.0: Ingestion Pipeline
+## Completed: v0.2.0 — Ingestion Pipeline
 
 **Theme:** Turn VectorSync from a storage layer into an end-to-end retrieval service.
 
-Right now, clients must pre-compute embeddings before inserting. v0.2 handles the full path from raw text to searchable vectors.
+Clients no longer need to pre-compute embeddings. v0.2 handles the full path from raw text to searchable vectors.
 
-### Text-to-Vector Pipeline
-- **Ingest endpoint** -- Accept raw text/documents, not just pre-computed vectors
-- **Chunking engine** -- Split documents into segments (fixed-size, sentence-based, recursive-character)
-- **Embedding orchestration** -- Call external model APIs (OpenAI, Cohere, local Ollama) to generate vectors
+### Delivered
+
+<CardGroup cols={2}>
+  <Card title="Ingest Endpoint" icon="check">
+    `POST /api/v1/documents/ingest` — Accept raw text, chunk it, generate embeddings, and store the results
+  </Card>
+  <Card title="Chunking Engine" icon="check">
+    Three strategies: fixed-size, sentence-based, and recursive-character splitting
+  </Card>
+  <Card title="Embedding Orchestration" icon="check">
+    Call external model APIs (OpenAI, Cohere, local Ollama) to generate vectors automatically
+  </Card>
+  <Card title="Collection Embedding Config" icon="check">
+    Configure `embedding_provider` and `embedding_model` per collection at creation time
+  </Card>
+  <Card title="CI Pipeline" icon="check">
+    GitHub Actions workflow: lint, format, protobuf sync, unit tests with pgvector, and E2E validation
+  </Card>
+</CardGroup>
 
 ---
 

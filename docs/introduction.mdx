@@ -10,6 +10,9 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 ## Key Features
 
 <CardGroup cols={2}>
+  <Card title="Raw Text Ingestion" icon="upload">
+    Accept raw text, automatically chunk and embed it via OpenAI, Cohere, or Ollama
+  </Card>
   <Card title="Vector Similarity Search" icon="magnifying-glass">
     Cosine, Euclidean, and Inner Product distance with configurable top-K
   </Card>
@@ -20,7 +23,7 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
     Native gRPC with HTTP/JSON gateway via grpc-gateway
   </Card>
   <Card title="Collection Management" icon="folder">
-    Organize embeddings into collections with fixed dimensions
+    Organize embeddings into collections with fixed dimensions and optional embedding config
   </Card>
   <Card title="CRUD + Upsert" icon="database">
     Insert, upsert, retrieve, and delete documents with embeddings
@@ -34,9 +37,12 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
   <Card title="HNSW Indexing" icon="bolt">
     Automatic per-collection HNSW index for fast approximate nearest neighbor search
   </Card>
+  <Card title="Pluggable Chunking" icon="scissors">
+    Fixed-size, sentence-based, and recursive-character text splitting strategies
+  </Card>
 </CardGroup>
 
-## Current Capabilities (v0.1.0-alpha)
+## Current Capabilities (v0.2.0)
 
 | Feature | Status |
 |---------|--------|
@@ -51,10 +57,14 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 | Graceful Shutdown | Complete |
 | HNSW Indexing | Complete |
 | Distance Metrics (cosine, euclidean, inner_product) | Complete |
+| Raw Text Ingestion Pipeline | Complete (v0.2.0) |
+| Multi-Provider Embeddings (OpenAI, Cohere, Ollama) | Complete (v0.2.0) |
+| Text Chunking Engine | Complete (v0.2.0) |
+| CI Pipeline (lint, test, E2E) | Complete (v0.2.0) |
 | gRPC API | Complete |
 | HTTP/JSON API | Complete |
 | Stress Testing (100 concurrent clients) | Verified |
-| Unit Tests (service layer, 28 tests) | Verified |
+| Unit Tests (service layer) | Verified |
 
 ## Performance (Local Docker, 768-dim vectors)
 
