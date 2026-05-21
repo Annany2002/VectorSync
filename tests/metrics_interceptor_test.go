@@ -1,10 +1,11 @@
-package metrics
+package tests
 
 import (
 	"context"
 	"errors"
 	"testing"
 
+	"github.com/Annany2002/vector-sync/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -12,9 +13,9 @@ import (
 )
 
 func TestUnaryServerInterceptor_RecordsOK(t *testing.T) {
-	RPCDuration.Reset()
-	RPCInflight.Reset()
-	interceptor := UnaryServerInterceptor()
+	metrics.RPCDuration.Reset()
+	metrics.RPCInflight.Reset()
+	interceptor := metrics.UnaryServerInterceptor()
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Svc/Ping"}
 	handler := func(_ context.Context, _ any) (any, error) { return "pong", nil }
@@ -27,19 +28,19 @@ func TestUnaryServerInterceptor_RecordsOK(t *testing.T) {
 		t.Fatalf("expected pong, got %v", resp)
 	}
 
-	got := testutil.CollectAndCount(RPCDuration, "vectorsync_grpc_request_duration_seconds")
+	got := testutil.CollectAndCount(metrics.RPCDuration, "vectorsync_grpc_request_duration_seconds")
 	if got == 0 {
 		t.Fatal("expected duration metric to be recorded")
 	}
-	if c := testutil.ToFloat64(RPCInflight.WithLabelValues("/test.Svc/Ping")); c != 0 {
+	if c := testutil.ToFloat64(metrics.RPCInflight.WithLabelValues("/test.Svc/Ping")); c != 0 {
 		t.Fatalf("expected inflight to be 0 after handler returns, got %v", c)
 	}
 }
 
 func TestUnaryServerInterceptor_RecordsErrorCode(t *testing.T) {
-	RPCDuration.Reset()
-	RPCInflight.Reset()
-	interceptor := UnaryServerInterceptor()
+	metrics.RPCDuration.Reset()
+	metrics.RPCInflight.Reset()
+	interceptor := metrics.UnaryServerInterceptor()
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Svc/Boom"}
 	wantErr := status.Error(codes.InvalidArgument, "bad input")
@@ -50,8 +51,7 @@ func TestUnaryServerInterceptor_RecordsErrorCode(t *testing.T) {
 		t.Fatalf("expected handler error to propagate, got %v", err)
 	}
 
-	// Locate the histogram for code=InvalidArgument and confirm one observation.
-	count := testutil.CollectAndCount(RPCDuration, "vectorsync_grpc_request_duration_seconds")
+	count := testutil.CollectAndCount(metrics.RPCDuration, "vectorsync_grpc_request_duration_seconds")
 	if count == 0 {
 		t.Fatal("expected histogram observation for error case")
 	}

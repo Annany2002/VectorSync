@@ -1,4 +1,4 @@
-package metrics
+package tests
 
 import (
 	"io"
@@ -7,11 +7,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Annany2002/vector-sync/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func TestHTTPMiddleware_RecordsAndScrape(t *testing.T) {
-	HTTPDuration.Reset()
+	metrics.HTTPDuration.Reset()
 
 	root := http.NewServeMux()
 	root.Handle("/metrics", promhttp.Handler())
@@ -21,12 +22,11 @@ func TestHTTPMiddleware_RecordsAndScrape(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 		_, _ = w.Write([]byte("pong"))
 	})
-	root.Handle("/", HTTPMiddleware(app))
+	root.Handle("/", metrics.HTTPMiddleware(app))
 
 	srv := httptest.NewServer(root)
 	defer srv.Close()
 
-	// Generate one labelled observation.
 	resp, err := http.Get(srv.URL + "/ping")
 	if err != nil {
 		t.Fatalf("ping failed: %v", err)
@@ -34,7 +34,6 @@ func TestHTTPMiddleware_RecordsAndScrape(t *testing.T) {
 	_, _ = io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
 
-	// Scrape and verify our series appears.
 	mResp, err := http.Get(srv.URL + "/metrics")
 	if err != nil {
 		t.Fatalf("scrape failed: %v", err)

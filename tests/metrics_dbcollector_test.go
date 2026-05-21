@@ -1,21 +1,20 @@
-package metrics
+package tests
 
 import (
 	"database/sql"
 	"strings"
 	"testing"
 
+	"github.com/Annany2002/vector-sync/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestDBCollector_EmitsExpectedSeries(t *testing.T) {
-	// Use the std library "txdb"-free path: open with a no-op driver via
-	// sql.OpenDB on a faux connector would need a driver; instead we use a
-	// pool that never connects. sql.DB.Stats() is safe to call on a zero pool.
+	// sql.DB.Stats() is safe on a zero-value pool, so no driver needed.
 	db := &sql.DB{}
 
-	c := NewDBCollector(db)
+	c := metrics.NewDBCollector(db)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
