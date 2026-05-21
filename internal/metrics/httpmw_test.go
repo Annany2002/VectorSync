@@ -17,7 +17,7 @@ func TestHTTPMiddleware_RecordsAndScrape(t *testing.T) {
 	root.Handle("/metrics", promhttp.Handler())
 
 	app := http.NewServeMux()
-	app.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+	app.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 		_, _ = w.Write([]byte("pong"))
 	})

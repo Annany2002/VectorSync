@@ -28,6 +28,11 @@ linters:
     - sqlclosecheck # Checks SQL rows/statements are closed
 
 issues:
+  exclude-dirs:
+    - bin
+    - vendor
+    - .git
+    - api/proto/v1/generated  # Skip generated protobuf code
   exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go
@@ -48,13 +53,9 @@ issues:
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - bin
-    - vendor
-    - .git
-    - api/proto/v1/generated  # Skip generated protobuf code
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true

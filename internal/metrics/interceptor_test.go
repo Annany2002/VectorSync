@@ -17,7 +17,7 @@ func TestUnaryServerInterceptor_RecordsOK(t *testing.T) {
 	interceptor := UnaryServerInterceptor()
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Svc/Ping"}
-	handler := func(ctx context.Context, req any) (any, error) { return "pong", nil }
+	handler := func(_ context.Context, _ any) (any, error) { return "pong", nil }
 
 	resp, err := interceptor(context.Background(), nil, info, handler)
 	if err != nil {
@@ -43,7 +43,7 @@ func TestUnaryServerInterceptor_RecordsErrorCode(t *testing.T) {
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Svc/Boom"}
 	wantErr := status.Error(codes.InvalidArgument, "bad input")
-	handler := func(ctx context.Context, req any) (any, error) { return nil, wantErr }
+	handler := func(_ context.Context, _ any) (any, error) { return nil, wantErr }
 
 	_, err := interceptor(context.Background(), nil, info, handler)
 	if !errors.Is(err, wantErr) {
