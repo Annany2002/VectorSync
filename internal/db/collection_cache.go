@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+
+	"github.com/Annany2002/vector-sync/internal/metrics"
 )
 
 // collectionInfo holds cached collection metadata
@@ -82,9 +84,14 @@ func (c *CollectionCache) GetDistanceMetric(collectionId string) (string, bool) 
 // Returns (dimension, metric, provider, model, true) if found, (0, "", "", "", false) if not cached.
 func (c *CollectionCache) GetInfo(collectionId string) (int32, string, string, string, bool) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	info, exists := c.cache[collectionId]
+	c.mu.RUnlock()
+
+	if exists {
+		metrics.CacheOps.WithLabelValues("hit").Inc()
+	} else {
+		metrics.CacheOps.WithLabelValues("miss").Inc()
+	}
 	return info.dimension, info.distanceMetric, info.embeddingProvider, info.embeddingModel, exists
 }
 

@@ -13,8 +13,11 @@ import (
 	"github.com/Annany2002/vector-sync/internal/db"
 	grpcHandler "github.com/Annany2002/vector-sync/internal/grpc"
 	"github.com/Annany2002/vector-sync/internal/logger"
+	"github.com/Annany2002/vector-sync/internal/metrics"
 	"github.com/Annany2002/vector-sync/internal/services"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -33,6 +36,9 @@ func main() {
 		log.Errorf("Failed to connect to database: %v", err)
 		return
 	}
+
+	// Expose pool stats to Prometheus.
+	prometheus.MustRegister(metrics.NewDBCollector(dbConn))
 
 	// Create repository layer (talks to database)
 	collectionRepo := db.NewCollectionRepo(dbConn)
@@ -67,6 +73,7 @@ func main() {
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(maxMsgSize),
 		grpc.MaxSendMsgSize(maxMsgSize),
+		grpc.UnaryInterceptor(metrics.UnaryServerInterceptor()),
 	)
 
 	// Register our services with the gRPC server
@@ -138,10 +145,17 @@ func main() {
 		log.Fatalf("Failed to register health gateway: %v", err)
 	}
 
+	// Parent mux routes /metrics directly to promhttp; everything else falls
+	// through to the grpc-gateway mux. Keeping them on the same port avoids
+	// opening another listener.
+	rootMux := http.NewServeMux()
+	rootMux.Handle("/metrics", promhttp.Handler())
+	rootMux.Handle("/", metrics.HTTPMiddleware(mux))
+
 	// Create HTTP server with explicit configuration
 	httpServer := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: rootMux,
 	}
 
 	// Start HTTP server in a goroutine

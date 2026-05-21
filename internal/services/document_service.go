@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/Annany2002/vector-sync/internal/chunker"
 	"github.com/Annany2002/vector-sync/internal/db"
 	"github.com/Annany2002/vector-sync/internal/embedding"
+	"github.com/Annany2002/vector-sync/internal/metrics"
 	"github.com/Annany2002/vector-sync/internal/models"
 )
 
@@ -536,6 +538,7 @@ func (s *DocumentService) IngestDocument(ctx context.Context, collectionId, cont
 	if len(chunks) == 0 {
 		return 0, nil, nil
 	}
+	metrics.IngestChunks.WithLabelValues(config.Strategy).Add(float64(len(chunks)))
 
 	// 3. Generate embeddings
 	client, err := embedding.GetClient(provider, model)
@@ -543,10 +546,14 @@ func (s *DocumentService) IngestDocument(ctx context.Context, collectionId, cont
 		return 0, nil, fmt.Errorf("failed to initialize embedding client: %w", err)
 	}
 
+	embedStart := time.Now()
 	embeddings, err := client.GenerateEmbeddings(ctx, chunks)
+	metrics.IngestEmbedDuration.WithLabelValues(provider).Observe(time.Since(embedStart).Seconds())
 	if err != nil {
+		metrics.IngestEmbedCalls.WithLabelValues(provider, "error").Inc()
 		return 0, nil, fmt.Errorf("failed to generate embeddings: %w", err)
 	}
+	metrics.IngestEmbedCalls.WithLabelValues(provider, "ok").Inc()
 
 	// 4. Validate embedding dimension
 	dimension, _, err := s.getCollectionInfo(ctx, collectionId)

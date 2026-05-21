@@ -23,15 +23,23 @@ jobs:
         with:
           version: latest
           args: --timeout=5m
+          # Surface only issues introduced by this PR; pre-existing repo
+          # findings are tracked separately and shouldn't block new work.
+          only-new-issues: true
 
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports@latest
 
       - name: Check Go formatting
         run: |
-          if [ -n "$(gofmt -l .)" ]; then
+          # Exclude generated protobuf code (formatted by protoc, not gofmt).
+          UNFORMATTED=$(find . -name '*.go' \
+            -not -path './api/proto/v1/generated/*' \
+            -not -path './vendor/*' \
+            | xargs gofmt -l)
+          if [ -n "$UNFORMATTED" ]; then
             echo "The following files are not formatted with gofmt:"
-            gofmt -l .
+            echo "$UNFORMATTED"
             echo "Run 'make format' to fix formatting."
             exit 1
           fi
@@ -39,9 +47,14 @@ jobs:
 
       - name: Check Go imports
         run: |
-          if [ -n "$(goimports -l .)" ]; then
+          # Exclude generated protobuf code; protoc-gen-go grouping differs from goimports.
+          UNORGANIZED=$(find . -name '*.go' \
+            -not -path './api/proto/v1/generated/*' \
+            -not -path './vendor/*' \
+            | xargs goimports -l)
+          if [ -n "$UNORGANIZED" ]; then
             echo "The following files have unorganized imports:"
-            goimports -l .
+            echo "$UNORGANIZED"
             echo "Run 'make format' to fix imports."
             exit 1
           fi
@@ -61,14 +74,22 @@ jobs:
           cache: true
 
       - name: Install Protobuf Compiler
+        env:
+          PROTOC_VERSION: "34.1"
         run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          # Use the official release tarball so the protoc version matches
+          # what generated the committed code (apt's protobuf-compiler is too
+          # old and produces a different version-header diff).
+          curl -sSL -o /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          sudo unzip -o /tmp/protoc.zip -d /usr/local
+          sudo chmod +x /usr/local/bin/protoc
+          protoc --version
 
       - name: Install Go Protoc Generators
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
           go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.27.4
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 

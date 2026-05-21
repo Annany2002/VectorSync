@@ -126,14 +126,14 @@ func convertToProtoCollection(c *models.Collection) *pb.Collection {
 
 	// Build and return the protobuf Collection message
 	return &pb.Collection{
-		Id:              c.Id,
-		CreatedAt:       timestamppb.New(c.CreatedAt),
-		UpdatedAt:       timestamppb.New(c.UpdatedAt),
-		Name:            c.Name,
-		VectorDimension: int32(c.VectorDimension),
-		MetadataSchema:  metadataSchemaProto,
-		DocumentCount:   c.DocumentCount,
-		DistanceMetric:  c.DistanceMetric,
+		Id:                c.Id,
+		CreatedAt:         timestamppb.New(c.CreatedAt),
+		UpdatedAt:         timestamppb.New(c.UpdatedAt),
+		Name:              c.Name,
+		VectorDimension:   int32(c.VectorDimension),
+		MetadataSchema:    metadataSchemaProto,
+		DocumentCount:     c.DocumentCount,
+		DistanceMetric:    c.DistanceMetric,
 		EmbeddingProvider: c.EmbeddingProvider,
 		EmbeddingModel:    c.EmbeddingModel,
 	}

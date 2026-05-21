@@ -13,8 +13,8 @@ import (
 )
 
 type OllamaEmbeddingClient struct {
-	host  string
-	model string
+	host   string
+	model  string
 	client *http.Client
 }
 
@@ -45,8 +45,8 @@ func NewOllamaEmbeddingClient(model string) (*OllamaEmbeddingClient, error) {
 	host = strings.TrimSuffix(host, "/")
 
 	return &OllamaEmbeddingClient{
-		host:  host,
-		model: model,
+		host:   host,
+		model:  model,
 		client: &http.Client{Timeout: 30 * time.Second},
 	}, nil
 }

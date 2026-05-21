@@ -81,7 +81,7 @@ func (c *SentenceChunker) Chunk(text string, size, overlap int) []string {
 		if currentChunk.Len()+len(sentence) > size && currentChunk.Len() > 0 {
 			chunks = append(chunks, currentChunk.String())
 			currentChunk.Reset()
-			
+
 			// Simple sentence overlap: we can carry over the last sentence if it is within overlap size
 			// and is not the same sentence we're currently processing.
 		}
@@ -188,7 +188,7 @@ func (c *RecursiveCharacterChunker) mergeDocs(docs []string, separator string, s
 		// If adding this doc exceeds size
 		if currentLen+docLen+len(separator) > size && len(currentBlock) > 0 {
 			merged = append(merged, strings.Join(currentBlock, separator))
-			
+
 			// Retain elements for overlap
 			// Keep removing from the front until the block size is within overlap
 			for currentLen > overlap && len(currentBlock) > 0 {
@@ -197,7 +197,7 @@ func (c *RecursiveCharacterChunker) mergeDocs(docs []string, separator string, s
 				currentLen -= (len(removed) + len(separator))
 			}
 		}
-		
+
 		currentBlock = append(currentBlock, doc)
 		if currentLen == 0 {
 			currentLen = docLen

@@ -6,7 +6,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/Annany2002/vector-sync/internal/metrics"
 	"github.com/Annany2002/vector-sync/internal/models"
 )
 
@@ -108,7 +110,12 @@ func (r *CollectionRepo) Create(ctx context.Context, name string, vectorDimensio
 	// context.Background() is intentional: the caller's context may be cancelled
 	// before the goroutine executes, but we still want the index to be created.
 	go func() {
-		_, _ = r.db.ExecContext(context.Background(), indexQuery)
+		start := time.Now()
+		_, err := r.db.ExecContext(context.Background(), indexQuery)
+		metrics.HNSWBuildDuration.Observe(time.Since(start).Seconds())
+		if err != nil {
+			metrics.HNSWBuildErrors.Inc()
+		}
 	}()
 
 	return &collection, nil
