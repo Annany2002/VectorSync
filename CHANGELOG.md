@@ -25,6 +25,9 @@ All notable changes to VectorSync are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Prometheus metrics** — `/metrics` endpoint on the gateway port (8080) exposing gRPC RPC latency (histogram, by method + code), in-flight RPCs, HTTP gateway latency, `sql.DB` pool stats (open/in-use/idle/wait), collection cache hit/miss, async HNSW build duration, and ingestion-pipeline counters (chunks, embed calls, embed duration by provider). New package `internal/metrics`. See [docs/observability.mdx](docs/observability.mdx).
+
 ### Performance
 - **Async HNSW index DROP on collection delete** — index cleanup no longer blocks the delete response
 - **Parallel batch serialization** — `vectorToString` + `json.Marshal` fan out across goroutines for batches >= 32 docs

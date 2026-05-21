@@ -29,6 +29,7 @@ VectorSync is a Go-based API service for vector storage and retrieval. It wraps 
 - **Batch Operations** -- Insert and delete up to 1000 documents per request
 - **Metadata Filtering** -- JSONB-based filtering on search queries
 - **Optional Vector Returns** -- Exclude vectors from responses to reduce payload by ~97%
+- **Prometheus Metrics** -- `/metrics` endpoint on the gateway port: gRPC latency histograms, pool stats, cache hit ratio, HNSW build duration, ingestion counters ([docs](docs/observability.mdx))
 - **CI Pipeline** -- Automated linting, formatting, protobuf sync, unit tests, and E2E validation on every PR
 
 ## Performance
